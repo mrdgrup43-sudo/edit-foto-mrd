@@ -1,0 +1,2095 @@
+<html>
+        <head><title>Downloaded HTML</title></head>
+        <body>
+            <pre style="white-space: pre-wrap; word-wrap: break-word;"><!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MRD Photo Editor</title>
+  <!-- Menambahkan FontAwesome untuk Ikon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Script AI MediaPipe untuk Deteksi Subjek Lokal (Offline) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+
+  <!-- Script Iklan Google -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-3169939987894157" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #070b14; color: #f8fafc; }
+    body { width: 100%; height: 100%; overflow: hidden; }
+
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      height: 58px; padding: 8px 14px; background: rgba(10, 15, 29, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex;
+      justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 14px;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4, #22c55e);
+      display: grid; place-items: center; font-size: 20px; color: white;
+      box-shadow: 0 12px 28px rgba(6, 182, 212, 0.22);
+    }
+    header h1 { font-size: 18px; letter-spacing: 0.2px; }
+    header p { color: #94a3b8; font-size: 12px; margin-top: 2px; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .header-upload-btn { display: none; }
+    .stage-upload-btn {
+      position: absolute;
+      left: 50%;
+      top: auto;
+      bottom: 68px;
+      transform: translateX(-50%);
+      z-index: 5;
+      min-width: 170px;
+      padding: 13px 18px;
+      border-radius: 18px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #06b6d4, #7c3aed);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+      box-shadow: 0 14px 32px rgba(6, 182, 212, 0.28);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+    .stage-upload-btn:hover { filter: brightness(1.08); transform: translateX(-50%) translateY(-2px); }
+    .stage-upload-btn.hidden { display: none; }
+    .desktop-hide { display: none; }
+    .upload-section { display: none; }
+
+    .app {
+      position: fixed; left: 0; right: 0; top: 58px; bottom: 0;
+      height: auto; min-height: 0;
+      display: grid; grid-template-columns: 330px minmax(0, 1fr);
+      gap: 10px; padding: 10px; overflow: hidden;
+    }
+    .app > * { min-height: 0; max-height: 100%; }
+    .sidebar {
+      height: 100%; min-height: 0; max-height: 100%; overflow-y: scroll; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: rgba(15, 23, 42, 0.86);
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px;
+      padding: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .stage-wrap {
+      height: 100%; min-height: 0; max-height: 100%; min-width: 0;
+      background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 35%),
+                  radial-gradient(circle at bottom right, rgba(6, 182, 212, 0.16), transparent 34%), #090f1d;
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 28px; padding: 16px;
+      display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 20px 60px rgba(0,0,0,0.38);
+    }
+    canvas { display: block; max-width: calc(100% - 8px); max-height: calc(100% - 8px); background-color: #e5e7eb; background-image: linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%); background-size: 22px 22px; background-position: 0 0, 0 11px, 11px -11px, -11px 0px; border-radius: 22px; box-shadow: 0 24px 65px rgba(0,0,0,0.55); cursor: grab; touch-action: none; }
+    canvas:active { cursor: grabbing; }
+    canvas.eraser-cursor { cursor: crosshair; }
+    #photoLayer {
+      position: absolute;
+      z-index: 3;
+      background: transparent !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      pointer-events: none;
+    }
+    #canvas { position: relative; z-index: 1; }
+    .hint {
+      position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+      background: rgba(2, 6, 23, 0.78); border: 1px solid rgba(255,255,255,0.12);
+      color: #dbeafe; padding: 9px 14px; border-radius: 999px; font-size: 12px;
+      text-align: center; pointer-events: none; backdrop-filter: blur(12px);
+    }
+
+    .section { background: rgba(2, 6, 23, 0.56); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 12px; margin-bottom: 10px; }
+    .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; font-weight: 800; color: #f8fafc; }
+    .section-title i, details.section summary i { color: #38bdf8; margin-right: 6px; width: 16px; text-align: center; }
+    .badge { font-size: 10px; color: #c4b5fd; background: rgba(139, 92, 246, 0.16); border: 1px solid rgba(139, 92, 246, 0.28); padding: 4px 7px; border-radius: 999px; }
+    details.section { padding: 0; overflow: hidden; }
+    details.section summary { list-style: none; cursor: pointer; padding: 13px 14px; font-size: 14px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; color: #f8fafc; background: rgba(15, 23, 42, 0.72); }
+    details.section summary::-webkit-details-marker { display: none; }
+    details.section summary::after { content: '\f105'; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 18px; line-height: 1; transition: transform 0.18s ease; color: #a5b4fc; }
+    details[open].section summary::after { transform: rotate(90deg); }
+    .section-body { padding: 12px; }
+
+    label { display: block; color: #bfdbfe; font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+    .file-box { border: 1px dashed rgba(147, 197, 253, 0.48); background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(139, 92, 246, 0.12)); border-radius: 18px; padding: 12px; }
+    .upload-actions { display: flex; justify-content: flex-end; align-items: center; width: 100%; }
+    .upload-hidden { display: none; }
+    .upload-photo-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 150px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #06b6d4, #7c3aed);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+      margin: 0;
+      box-shadow: 0 12px 24px rgba(6, 182, 212, 0.18);
+    }
+    .upload-photo-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    input[type="file"], input[type="text"], textarea, select { width: 100%; padding: 11px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15, 23, 42, 0.94); color: #f8fafc; outline: none; font-family: inherit; }
+    textarea { resize: vertical; min-height: 80px; }
+    input[type="color"] { width: 100%; height: 42px; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; background: transparent; overflow: hidden; }
+    input[type="range"] { width: 100%; accent-color: #38bdf8; }
+
+    button { border: none; border-radius: 15px; padding: 11px 12px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; cursor: pointer; font-weight: 800; font-size: 13px; transition: transform 0.15s ease, filter 0.15s ease, opacity 0.15s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    button:active { transform: translateY(0); opacity: 0.86; }
+    .secondary { background: #1e293b; border: 1px solid rgba(255,255,255,0.08); }
+    .danger { background: linear-gradient(135deg, #dc2626, #f97316); }
+    .success { background: linear-gradient(135deg, #059669, #22c55e); }
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-full { width: 100%; margin-top: 8px; }
+
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .filter-group-box { background: rgba(15, 23, 42, 0.62); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 10px; margin-bottom: 10px; }
+    .filter-category-title { display: flex; justify-content: space-between; align-items: center; color: #f8fafc; font-size: 12px; font-weight: 900; margin-bottom: 8px; }
+    .filter-category-title span { color: #93c5fd; font-size: 10px; font-weight: 800; background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.24); padding: 3px 7px; border-radius: 999px; }
+    .filter-btn { min-height: 52px; text-align: left; align-items: flex-start; padding: 9px; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 3px; }
+    .filter-btn strong { font-size: 12px; }
+    .filter-btn span { color: #94a3b8; font-size: 10px; font-weight: 600; }
+    .filter-btn.active { border-color: rgba(255,255,255,0.75); box-shadow: 0 0 0 2px rgba(255,255,255,0.18), 0 10px 22px rgba(6, 182, 212, 0.18); transform: translateY(-1px); }
+
+    .sketch-tone { background: linear-gradient(135deg, rgba(226,232,240,.24), rgba(100,116,139,.38)); border-color: rgba(226,232,240,.28); }
+    .hdr-tone { background: linear-gradient(135deg, rgba(14,165,233,.55), rgba(34,197,94,.42)); border-color: rgba(125,211,252,.38); }
+    .interior-tone { background: linear-gradient(135deg, rgba(245,158,11,.42), rgba(14,165,233,.32)); border-color: rgba(253,186,116,.34); }
+    .film-tone-1 { background: linear-gradient(135deg, rgba(251,146,60,.86), rgba(236,72,153,.72)); }
+    .film-tone-2 { background: linear-gradient(135deg, rgba(249,115,22,.9), rgba(245,158,11,.74)); }
+    .film-tone-3 { background: linear-gradient(135deg, rgba(234,88,12,.88), rgba(251,191,36,.78)); }
+    .film-tone-4 { background: linear-gradient(135deg, rgba(244,114,182,.78), rgba(251,146,60,.82)); }
+
+    .slider-box { margin-bottom: 12px; }
+    .value-row { display: flex; justify-content: space-between; align-items: center; color: #cbd5e1; font-size: 12px; margin-bottom: 6px; }
+    .small-note { color: #94a3b8; font-size: 11px; line-height: 1.45; margin-top: 8px; }
+    .sticker-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .sticker-row button { background: #111827; border: 1px solid rgba(255,255,255,0.08); font-size: 21px; padding: 12px 4px; color: #facc15; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    .spacer { height: 10px; }
+    .hidden-panel { display: none !important; }
+    .selected-filter-name { color: #fbbf24; font-size: 11px; margin-bottom: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;}
+    .active-tool-note { color: #67e8f9; font-size: 11px; font-weight: 800; margin-top: 8px; }
+    .tool-on { background: linear-gradient(135deg, #0891b2, #2563eb) !important; box-shadow: 0 0 0 2px rgba(103,232,249,0.22); }
+    .layer-status {
+      color: #c4b5fd;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.22);
+      border-radius: 14px;
+      padding: 8px 10px;
+      font-size: 11px;
+      line-height: 1.35;
+      margin-top: 8px;
+    }
+    .crop-preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .crop-preset-grid button {
+      min-height: 46px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-direction: column;
+      gap: 2px;
+    }
+    .crop-preset-grid button strong { font-size: 12px; }
+    .crop-preset-grid button span { color: #94a3b8; font-size: 10px; font-weight: 700; }
+    .crop-preset-grid button.active {
+      background: linear-gradient(135deg, #06b6d4, #7c3aed);
+      border-color: rgba(255,255,255,0.45);
+      box-shadow: 0 0 0 2px rgba(103,232,249,0.16);
+    }
+
+    @media (max-width: 900px) {
+      header { height: 50px; padding: 6px 10px; }
+      .logo { width: 34px; height: 34px; border-radius: 12px; font-size: 16px; }
+      header h1 { font-size: 15px; white-space: nowrap; }
+      header p, .badge, .filter-btn span { display: none; }
+      header button { padding: 8px 10px; font-size: 11px; border-radius: 12px; }
+      .stage-upload-btn { min-width: 140px; padding: 10px 14px; font-size: 12px; border-radius: 15px; }
+      .app { top: 50px; bottom: 0; height: auto; min-height: 0; grid-template-columns: 165px minmax(0, 1fr); gap: 6px; padding: 6px; }
+      .sidebar, .stage-wrap { border-radius: 16px; padding: 7px; }
+      canvas { border-radius: 12px; }
+      .section { border-radius: 14px; padding: 8px; margin-bottom: 7px; }
+      details.section { padding: 0; }
+      details.section summary { padding: 10px 9px; font-size: 11px; }
+      .section-title { font-size: 11px; margin-bottom: 7px; }
+      .section-body { padding: 8px; }
+      .btn-grid, .filter-grid { grid-template-columns: 1fr; gap: 6px; }
+      button { padding: 8px 7px; font-size: 10px; border-radius: 10px; }
+      .filter-btn { min-height: 38px; padding: 7px; }
+      .filter-btn strong, label, .value-row, .small-note { font-size: 10px; }
+      input[type="file"], input[type="text"], textarea, select { padding: 8px; font-size: 10px; border-radius: 10px; }
+      .upload-photo-btn { min-width: 120px; padding: 9px 12px; font-size: 11px; border-radius: 13px; }
+      .sticker-row { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+      .sticker-row button { font-size: 16px; padding: 8px 3px; }
+      .hint { font-size: 9px; padding: 6px 8px; bottom: 8px; max-width: 90%; }
+    }
+
+    .mobile-history-bar { display: none; }
+    .mobile-edit-bar { display: none; }
+    .save-preview-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(10px);
+    }
+    .save-preview-card {
+      width: min(440px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+    }
+    .save-preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .save-preview-head strong { font-size: 16px; }
+    .save-preview-head button {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 999px;
+    }
+    #savePreviewImage {
+      width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      margin-top: 10px;
+      border-radius: 18px;
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .save-preview-actions { margin-top: 10px; }
+    .save-preview-download {
+      border: none;
+      border-radius: 15px;
+      padding: 11px 12px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 700px) {
+      html, body {
+        background: #05070d;
+        overscroll-behavior: none;
+      }
+
+      header {
+        height: 44px;
+        padding: 5px 9px;
+        background: rgba(5, 7, 13, 0.98);
+      }
+      .brand { gap: 7px; min-width: 0; }
+      .logo { width: 28px; height: 28px; border-radius: 10px; font-size: 13px; flex: 0 0 auto; }
+      header h1 { font-size: 13px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      header p { display: none; }
+      .header-actions button {
+        width: 38px;
+        height: 34px;
+        padding: 0;
+        border-radius: 13px;
+        font-size: 0;
+      }
+      .header-actions button i { font-size: 14px; margin: 0; }
+      .header-upload-btn { display: none; }
+      .stage-upload-btn { display: none !important; }
+      .upload-section { display: block; }
+
+      .app {
+        top: 44px;
+        bottom: 60px;
+        padding: 0;
+        gap: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) clamp(190px, 31vh, 260px);
+        background: #05070d;
+      }
+
+      .stage-wrap {
+        order: 1;
+        border: 0;
+        border-radius: 0;
+        padding: 5px;
+        background: radial-gradient(circle at center, rgba(30, 41, 59, 0.82), #05070d 74%);
+        box-shadow: none;
+      }
+
+      canvas {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 16px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.55);
+      }
+
+      .mobile-history-bar {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 12;
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        padding: 6px 16px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+        pointer-events: auto;
+      }
+
+      .mobile-history-bar button {
+        width: 38px;
+        height: 34px;
+        padding: 0;
+        border-radius: 999px;
+        background: transparent;
+        border: 0;
+        color: #ffffff;
+        box-shadow: none;
+        font-size: 22px;
+      }
+
+      .mobile-history-bar button:hover { transform: none; filter: none; }
+      .mobile-history-bar button:active { opacity: 0.75; }
+      .mobile-history-bar button:disabled {
+        color: rgba(255,255,255,0.25);
+        opacity: 1;
+      }
+
+      .hint {
+        bottom: 8px;
+        max-width: calc(100% - 22px);
+        padding: 6px 10px;
+        font-size: 10px;
+        background: rgba(0,0,0,0.55);
+      }
+
+      .sidebar {
+        order: 2;
+        height: clamp(190px, 31vh, 260px);
+        max-height: clamp(190px, 31vh, 260px);
+        width: 100%;
+        border: 0;
+        border-top: 1px solid rgba(255,255,255,0.10);
+        border-radius: 20px 20px 0 0;
+        padding: 8px 10px 10px;
+        background: rgba(10, 16, 30, 0.98);
+        box-shadow: 0 -14px 36px rgba(0,0,0,0.50);
+        overflow: hidden;
+        display: block;
+      }
+
+      .sidebar::-webkit-scrollbar { width: 0; height: 0; }
+      .upload-actions { justify-content: center; }
+
+      .sidebar > .section,
+      .sidebar > details.section,
+      .sidebar > #manualAdjustPanel {
+        display: none !important;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        overflow-y: auto;
+        margin: 0;
+        border-radius: 17px;
+        background: rgba(15, 23, 42, 0.94);
+        scroll-snap-align: none;
+      }
+
+      .sidebar:not(.has-active-panel) > .upload-section,
+      .sidebar > .mobile-panel-active {
+        display: block !important;
+      }
+
+      .sidebar > details.section[open].mobile-panel-active { display: block !important; }
+
+      .sidebar > .section::-webkit-scrollbar,
+      .sidebar > details.section::-webkit-scrollbar {
+        width: 4px;
+      }
+      .sidebar > .section::-webkit-scrollbar-thumb,
+      .sidebar > details.section::-webkit-scrollbar-thumb {
+        background: rgba(148,163,184,0.35);
+        border-radius: 99px;
+      }
+
+      details.section summary {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 9px 11px;
+        font-size: 12px;
+        min-height: 38px;
+        background: rgba(15, 23, 42, 0.98);
+      }
+      details.section summary::after { font-size: 14px; }
+      .section { padding: 9px; }
+      .section-body { padding: 9px; }
+      .section-title { font-size: 12px; margin-bottom: 7px; }
+      .file-box { padding: 10px; border-radius: 15px; }
+      .filter-group-box { padding: 8px; border-radius: 14px; margin-bottom: 8px; }
+      #filterGroupPanel .section-body { padding-bottom: 22px; }
+      #filterGroupPanel .filter-grid { grid-template-columns: 1fr 1fr; gap: 7px; }
+      .btn-grid { grid-template-columns: 1fr 1fr; gap: 7px; }
+      .filter-btn { min-height: 40px; padding: 7px; }
+      .filter-btn span { display: block; }
+      .filter-category-title { font-size: 11px; }
+      .filter-category-title span { font-size: 9px; }
+      button { padding: 8px 8px; font-size: 10px; border-radius: 11px; }
+      .crop-preset-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .crop-preset-grid button { min-height: 38px; }
+      .crop-preset-grid button strong { font-size: 10px; }
+      .crop-preset-grid button span { font-size: 9px; }
+      label, .value-row, .small-note { font-size: 10px; }
+      input[type="file"], input[type="text"], textarea, select { padding: 8px; font-size: 11px; border-radius: 11px; }
+      textarea { min-height: 58px; }
+      .upload-photo-btn { min-width: 128px; padding: 9px 12px; font-size: 11px; border-radius: 13px; }
+      .sticker-row { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+      .sticker-row button { font-size: 16px; padding: 8px 3px; }
+      .layer-status { padding: 7px 9px; font-size: 10px; }
+
+      .save-preview-modal {
+        padding: 12px;
+      }
+      .save-preview-card {
+        max-height: 88vh;
+        border-radius: 20px;
+        padding: 12px;
+      }
+      #savePreviewImage {
+        max-height: 52vh;
+        border-radius: 16px;
+      }
+
+      .mobile-edit-bar {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: 6px;
+        z-index: 30;
+        height: 50px;
+        display: flex;
+        gap: 5px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
+        background: rgba(9, 14, 27, 0.96);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 18px;
+        box-shadow: 0 -8px 26px rgba(0,0,0,0.45);
+        backdrop-filter: blur(14px);
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .mobile-edit-bar::-webkit-scrollbar { display: none; }
+
+      .mobile-edit-bar button {
+        flex: 0 0 auto;
+        min-width: 54px;
+        height: 39px;
+        padding: 3px 5px;
+        border-radius: 13px;
+        font-size: 9px;
+        line-height: 1;
+        background: rgba(30, 41, 59, 0.82);
+        border: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        white-space: nowrap;
+      }
+      .mobile-edit-bar button i { font-size: 14px; }
+      .mobile-edit-bar button span { max-width: 48px; overflow: hidden; text-overflow: ellipsis; }
+
+      .mobile-edit-bar button.active {
+        background: linear-gradient(135deg, #06b6d4, #7c3aed);
+        box-shadow: 0 0 0 2px rgba(103,232,249,0.16);
+      }
+
+      .sidebar > .section.mobile-panel-active,
+      .sidebar > details.section.mobile-panel-active,
+      .sidebar > #filterGroupPanel.mobile-panel-active,
+      .sidebar > #manualAdjustPanel.mobile-panel-active,
+      .sidebar > #cropPanel.mobile-panel-active,
+      .sidebar > #backgroundPanel.mobile-panel-active,
+      .sidebar > #textPanel.mobile-panel-active,
+      .sidebar > #stickerPanel.mobile-panel-active,
+      .sidebar > #layoutPanel.mobile-panel-active,
+      .sidebar > #addPhotoPanel.mobile-panel-active,
+      .sidebar > #blurSection.mobile-panel-active,
+      .sidebar > #magicEraserSection.mobile-panel-active {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      .sidebar.has-active-panel > .section:not(.mobile-panel-active),
+      .sidebar.has-active-panel > details.section:not(.mobile-panel-active) {
+        display: none !important;
+      }
+
+      #filterGroupPanel.mobile-panel-active .section-body,
+      #filterGroups {
+        display: block !important;
+        visibility: visible !important;
+      }
+
+      #filterGroups:empty::before {
+        content: 'Filter sedang dimuat...';
+        display: block;
+        color: #cbd5e1;
+        padding: 12px;
+        font-size: 12px;
+      }
+
+      .sidebar > details.section.mobile-panel-active {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+
+      .sidebar > details.section.mobile-panel-active > summary {
+        order: 0 !important;
+        flex: 0 0 auto !important;
+        position: relative !important;
+        top: auto !important;
+        z-index: 5 !important;
+        margin: 0 !important;
+        border-radius: 14px 14px 10px 10px !important;
+      }
+
+      .sidebar > details.section.mobile-panel-active > .section-body {
+        order: 1 !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        display: block !important;
+        padding-bottom: 28px !important;
+      }
+
+      #filterGroupPanel.mobile-panel-active {
+        background: rgba(15, 23, 42, 0.98) !important;
+      }
+
+      #filterGroupPanel.mobile-panel-active > .section-body {
+        display: block !important;
+        overflow-y: auto !important;
+      }
+
+      #filterGroupPanel.mobile-panel-active #filterGroups {
+        display: block !important;
+        min-height: 120px !important;
+      }
+    }
+
+    @media (max-height: 700px) and (min-width: 701px) {
+      header { height: 48px; padding: 5px 10px; }
+      header h1 { font-size: 16px; }
+      header p { display: none; }
+      .app { top: 48px; padding: 6px; gap: 6px; }
+      .sidebar, .stage-wrap { border-radius: 18px; padding: 8px; }
+    }
+
+    @media (max-width: 700px) and (max-height: 700px) {
+      header { height: 42px; }
+      .app {
+        top: 42px;
+        bottom: 56px;
+        grid-template-rows: minmax(0, 1fr) 178px;
+      }
+      .sidebar {
+        height: 178px;
+        max-height: 178px;
+        padding: 7px 9px 9px;
+      }
+      .mobile-edit-bar {
+        height: 48px;
+        bottom: 5px;
+      }
+      .mobile-edit-bar button {
+        min-width: 50px;
+        height: 37px;
+        font-size: 8.5px;
+      }
+      .mobile-edit-bar button i { font-size: 13px; }
+      details.section summary { min-height: 35px; padding: 8px 10px; }
+      .section-body { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo"><i class="fa-solid fa-palette"></i></div>
+      <div><h1>MRD Photo Editor</h1><p>Filter, atur halus, teks, stiker, crop, lalu simpan.</p></div>
+      <input id="upload" class="upload-hidden" type="file" accept="image/*" />
+    </div>
+    <div class="header-actions">
+      <button id="downloadPng" class="success"><i class="fa-solid fa-download"></i> Simpan PNG</button>
+    </div>
+  </header>
+
+  <main class="app">
+    <aside class="sidebar">
+      <div class="section upload-section"><div class="section-title"><span><i class="fa-solid fa-upload"></i> Upload Foto</span> <span class="badge">Wajib</span></div><div class="file-box"><div class="upload-actions"><label for="upload" class="upload-photo-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Foto</label></div><p class="small-note">Foto langsung muncul setelah dipilih.</p></div></div>
+      
+      <div class="section" id="quickActionsPanel"><div class="section-title"><span><i class="fa-solid fa-bolt"></i> Aksi Cepat</span> <span class="badge">Cepat</span></div><div class="btn-grid"><button id="undo" class="secondary"><i class="fa-solid fa-rotate-left"></i> Undo</button><button id="reset" class="danger"><i class="fa-solid fa-trash-can"></i> Reset</button></div><button id="fitImage" class="btn-full secondary"><i class="fa-solid fa-expand"></i> Pas ke Kanvas</button><button id="originalCanvas" class="btn-full secondary"><i class="fa-solid fa-image"></i> Ukuran Foto Asli</button><button id="downloadJpg" class="btn-full success"><i class="fa-solid fa-file-image"></i> Simpan JPG</button></div>
+
+      <details class="section" id="addPhotoPanel">
+        <summary><div><i class="fa-solid fa-images"></i> Tambah Foto</div></summary>
+        <div class="section-body">
+          <div class="file-box">
+            <div class="upload-actions"><label for="addPhotoInput" class="upload-photo-btn"><i class="fa-solid fa-plus"></i> Tambah Foto</label></div>
+            <input id="addPhotoInput" class="upload-hidden" type="file" accept="image/*" />
+            <p class="small-note">Tambahkan foto kedua di atas foto utama. Setelah masuk, klik lalu geser posisinya.</p>
+          </div>
+          
+          <div id="addedPhotoSizeBox" class="slider-box hidden-panel" style="margin-top: 15px;">
+            <div class="value-row"><span>Ukuran Foto 2</span><span id="addedPhotoSizeVal">100%</span></div>
+            <input id="addedPhotoSize" type="range" min="10" max="300" value="100" />
+            <p class="small-note">Geser untuk membesarkan atau mengecilkan ukuran foto kedua yang sedang dipilih.</p>
+          </div>
+
+          <div class="btn-grid" style="margin-top: 10px;">
+            <button id="mergePhotos" class="success"><i class="fa-solid fa-object-group"></i> Gabungkan</button>
+            <button id="separatePhotos" class="secondary"><i class="fa-solid fa-object-ungroup"></i> Pisahkan</button>
+          </div>
+          <button id="clearAddedPhotos" class="btn-full secondary"><i class="fa-solid fa-circle-xmark"></i> Hapus Foto Tambahan</button>
+          <p id="photoLayerStatus" class="layer-status">Belum ada foto tambahan. Klik Gabungkan agar semua fitur bekerja di dua foto.</p>
+        </div>
+      </details>
+
+      <details class="section" id="layoutPanel">
+        <summary><div><i class="fa-solid fa-border-all"></i> Tata Letak</div></summary>
+        <div class="section-body">
+          <div class="btn-grid">
+            <button id="layoutFull" class="secondary"><i class="fa-solid fa-maximize"></i> 1 Penuh</button>
+            <button id="layoutSide" class="secondary"><i class="fa-solid fa-table-columns"></i> 2 Samping</button>
+            <button id="layoutTopBottom" class="secondary"><i class="fa-solid fa-table-cells-large"></i> Atas Bawah</button>
+            <button id="layoutPip" class="secondary"><i class="fa-solid fa-compress"></i> Foto Kecil</button>
+          </div>
+          <button id="layoutCenter" class="btn-full secondary"><i class="fa-solid fa-align-center"></i> Tengah Semua</button>
+          <button id="layoutSquare" class="btn-full secondary"><i class="fa-solid fa-square"></i> Kanvas 1:1</button>
+          <button id="layoutWide" class="btn-full secondary"><i class="fa-solid fa-rectangle-wide"></i> Kanvas 16:9</button>
+          <p id="layoutStatus" class="layer-status">Pilih tata letak setelah upload foto.</p>
+        </div>
+      </details>
+
+      <details id="filterAdjustPanel" class="section hidden-panel">
+        <summary><div><i class="fa-solid fa-sliders"></i> Atur Filter</div></summary>
+        <div class="section-body">
+          <div id="selectedFilterName" class="selected-filter-name"><i class="fa-solid fa-palette"></i> Belum ada filter dipilih</div>
+          <div class="slider-box"><div class="value-row"><span>Kekuatan Filter</span><span id="filterStrengthVal">60%</span></div><input id="filterStrength" type="range" min="0" max="100" value="60" /></div>
+          <input id="filmLook" type="hidden" value="60" /><span id="filmLookVal" class="hidden-panel">60%</span>
+          <button id="closeFilterAdjust" class="btn-full secondary"><i class="fa-solid fa-xmark"></i> Tutup Atur Filter</button>
+        </div>
+      </details>
+
+      <details class="section" id="filterGroupPanel">
+        <summary><div><i class="fa-solid fa-palette"></i> Kelompok Filter</div></summary>
+        <div class="section-body" id="filterGroups"></div>
+      </details>
+
+      <details class="section" id="manualAdjustPanel">
+        <summary><div><i class="fa-solid fa-sliders"></i> Pengaturan</div></summary>
+        <div class="section-body">
+          <div class="slider-box"><div class="value-row"><span>Kecerahan</span><span id="brightnessVal">100%</span></div><input id="brightness" type="range" min="0" max="200" value="100" /></div>
+          <div class="slider-box"><div class="value-row"><span>Kontras</span><span id="contrastVal">100%</span></div><input id="contrast" type="range" min="0" max="200" value="100" /></div>
+          <div class="slider-box"><div class="value-row"><span>Saturasi</span><span id="saturateVal">100%</span></div><input id="saturate" type="range" min="0" max="230" value="100" /></div>
+          <div class="slider-box"><div class="value-row"><span>Kehangatan</span><span id="sepiaVal">0%</span></div><input id="sepia" type="range" min="0" max="100" value="0" /></div>
+          <div class="slider-box"><div class="value-row"><span>Blur</span><span id="blurVal">0px</span></div><input id="blur" type="range" min="0" max="10" value="0" /></div>
+          <div class="slider-box"><div class="value-row"><span>Hitam Putih</span><span id="grayscaleVal">0%</span></div><input id="grayscale" type="range" min="0" max="100" value="0" /></div>
+        </div>
+      </details>
+
+      <details class="section" id="blurSection"><summary><div><i class="fa-solid fa-droplet"></i> Kaburkan Latar</div></summary><div class="section-body">
+        <div class="btn-grid" style="margin-bottom: 10px;">
+          <button id="blurNone" class="active" style="border:1px solid #38bdf8; background: linear-gradient(135deg, #0284c7, #2563eb);">Mati</button>
+          <button id="blurStandard" class="secondary">Kabur</button>
+          <button id="blurMotion" class="secondary">Gerakan</button>
+          <button id="blurFilm" class="secondary">Film</button>
+        </div>
+        
+        <button id="btnAutoSubjectBlur" class="btn-full success" style="margin-bottom: 10px; background: linear-gradient(135deg, #8b5cf6, #d946ef);"><i class="fa-solid fa-person-rays"></i> Fokus Otomatis (AI)</button>
+        <p id="blurAiStatus" style="display: none; color: #fbbf24; font-size: 11px; font-weight: bold; margin-bottom: 10px;">Mendeteksi subjek... Harap tunggu sebentar.</p>
+
+        <div class="slider-box"><div class="value-row"><span>Kekuatan Blur</span><span id="blurStrengthDisplay">50%</span></div><input id="blurStrengthSlider" type="range" min="0" max="100" value="50" /></div>
+        <div class="slider-box"><div class="value-row"><span>Ukuran Kuas</span><span id="focusSizeDisplay">50px</span></div><input id="focusSizeSlider" type="range" min="10" max="150" value="50" /></div>
+        <div class="btn-grid">
+          <button id="toggleBlurFocus" class="secondary"><i class="fa-solid fa-paint-brush"></i> Kuas Tambahan: Mati</button>
+          <button id="clearBlurFocus" class="secondary"><i class="fa-solid fa-trash-can"></i> Hapus Fokus</button>
+        </div>
+        <p class="small-note">Sistem akan otomatis mendeteksi orang di foto. Gunakan Kuas Tambahan hanya jika ada area yang kurang pas.</p>
+      </div></details>
+
+      <details class="section" id="textPanel"><summary><div><i class="fa-solid fa-font"></i> Tambah Teks</div></summary><div class="section-body"><label>Teks</label><textarea id="textInput" placeholder="Contoh: PMK RUN&#10;Tekan Enter untuk baris baru" rows="3"></textarea><div class="spacer"></div><label>Jenis Tulisan</label><select id="fontFamily"><option value="Arial">Arial</option><option value="'Courier New', Courier, monospace">Courier</option><option value="'Times New Roman', Times, serif">Times New Roman</option><option value="Impact, fantasy">Impact</option><option value="'Comic Sans MS', cursive, sans-serif">Comic Sans</option><option value="'Trebuchet MS', sans-serif">Trebuchet MS</option><option value="'Brush Script MT', cursive">Brush Script</option></select><div class="spacer"></div><label>Warna Teks</label><input id="textColor" type="color" value="#ffffff" /><div class="spacer"></div><div class="value-row"><span>Ukuran Teks</span><span id="fontSizeVal">54px</span></div><input id="fontSize" type="range" min="20" max="120" value="54" /><button id="addText" class="btn-full"><i class="fa-solid fa-plus"></i> Tambah Teks</button><p class="small-note">Klik teks di foto lalu geser posisinya. Anda bisa mengubah tulisan, warna, dan ukuran saat teks dipilih.</p></div></details>
+      
+      <details class="section" id="stickerPanel"><summary><div><i class="fa-solid fa-icons"></i> Stiker</div></summary><div class="section-body">
+        <div class="sticker-row">
+          <button data-sticker="&#xf06d;"></button> <!-- Fire -->
+          <button data-sticker="&#xf005;"></button> <!-- Star -->
+          <button data-sticker="&#xf004;"></button> <!-- Heart -->
+          <button data-sticker="&#xf0e7;"></button> <!-- Bolt -->
+          <button data-sticker="&#xf11b;"></button> <!-- Gamepad -->
+          <button data-sticker="&#xf5c0;"></button> <!-- Glasses -->
+          <button data-sticker="&#xf3a5;"></button> <!-- Gem -->
+          <button data-sticker="&#xf521;"></button> <!-- Crown -->
+          <button data-sticker="&#xf890;"></button> <!-- Sparkles -->
+          <button data-sticker="&#xf135;"></button> <!-- Rocket -->
+        </div>
+        <p class="small-note">Warna stiker mengikuti setelan 'Warna Teks'. Klik stiker lalu geser di foto.</p>
+      </div></details>
+
+      <details class="section" id="backgroundPanel"><summary><div><i class="fa-solid fa-eraser"></i> Hapus Latar & Penghapus</div></summary><div class="section-body">
+        <div class="btn-grid"><button id="autoRemoveBg"><i class="fa-solid fa-user-check"></i> Otomatis (AI)</button><button id="pickRemoveBg" class="secondary"><i class="fa-solid fa-eye-dropper"></i> Pilih Warna</button></div>
+        <button id="clearRemoveBg" class="btn-full secondary"><i class="fa-solid fa-rotate-left"></i> Balikkan Latar</button>
+        <p id="bgAiStatus" class="small-note">Mode cepat otomatis kini menggunakan AI.</p>
+        <div class="btn-grid"><button id="eraserToggle" class="secondary"><i class="fa-solid fa-eraser"></i> Penghapus: Mati</button><button id="cleanWhiteBg" class="secondary"><i class="fa-solid fa-broom"></i> Hapus Putih</button></div>
+        <button id="clearEraser" class="btn-full secondary"><i class="fa-solid fa-trash-can"></i> Hapus Bekas Penghapus</button>
+        <div class="slider-box"><div class="value-row"><span>Ukuran Penghapus</span><span id="eraserSizeVal">34px</span></div><input id="eraserSize" type="range" min="8" max="120" value="34" /></div>
+        <div class="slider-box"><div class="value-row"><span>Kekasaran Penghapus</span><span id="eraserRoughnessVal">45%</span></div><input id="eraserRoughness" type="range" min="0" max="100" value="45" /></div>
+        <p id="toolNote" class="active-tool-note">Mode alat belum aktif.</p>
+        <p class="small-note">Fitur Otomatis menggunakan AI Deteksi Orang. Untuk foto selain orang, gunakan Pilih Warna atau Penghapus manual.</p>
+      </div></details>
+
+      <details class="section" id="magicEraserSection"><summary><div><i class="fa-solid fa-wand-sparkles"></i> Hapus Distraksi</div></summary><div class="section-body">
+        <button id="toggleMagicBrush" class="btn-full secondary"><i class="fa-solid fa-paint-roller"></i> Kuas Distraksi: Mati</button>
+        <div class="slider-box" style="margin-top: 10px;"><div class="value-row"><span>Ukuran Kuas</span><span id="magicBrushSizeVal">40px</span></div><input id="magicBrushSize" type="range" min="10" max="150" value="40" /></div>
+        <p class="small-note">Aktifkan kuas lalu coret area sekeliling, objek, atau orang di latar belakang yang mengganggu. Saat klik dilepas, sistem otomatis menyalin tekstur sekitarnya untuk menyamarkan objek.</p>
+      </div></details>
+
+      <details class="section" id="cropPanel"><summary><div><i class="fa-solid fa-crop"></i> Potong Foto</div></summary><div class="section-body">
+        <p class="small-note">Pilih ukuran potong, lalu geser kotak kuning di foto. Untuk mode Bebas, tekan dan tarik area sendiri.</p>
+        <div class="crop-preset-grid">
+          <button class="crop-preset active" data-crop-label="Bebas" data-crop-ratio="free"><strong>Bebas</strong><span>Manual</span></button>
+          <button class="crop-preset" data-crop-label="IG 1:1" data-crop-ratio="1"><strong>IG 1:1</strong><span>Feed kotak</span></button>
+          <button class="crop-preset" data-crop-label="IG 4:5" data-crop-ratio="0.8"><strong>IG 4:5</strong><span>Feed tinggi</span></button>
+          <button class="crop-preset" data-crop-label="Story/Reels 9:16" data-crop-ratio="0.5625"><strong>Story 9:16</strong><span>Reels/TikTok</span></button>
+          <button class="crop-preset" data-crop-label="Movie 16:9" data-crop-ratio="1.7777777778"><strong>Movie</strong><span>16:9</span></button>
+          <button class="crop-preset" data-crop-label="YouTube 16:9" data-crop-ratio="1.7777777778"><strong>YouTube</strong><span>Thumbnail</span></button>
+          <button class="crop-preset" data-crop-label="Facebook 1.91:1" data-crop-ratio="1.91"><strong>Facebook</strong><span>1.91:1</span></button>
+          <button class="crop-preset" data-crop-label="Portrait 3:4" data-crop-ratio="0.75"><strong>Portrait</strong><span>3:4</span></button>
+        </div>
+        <button id="cropBtn" class="btn-full"><i class="fa-solid fa-crop-simple"></i> Buat Area Potong</button>
+        <button id="applyCropBtn" class="btn-full success"><i class="fa-solid fa-check"></i> Terapkan Potong</button>
+        <button id="clearCrop" class="btn-full secondary"><i class="fa-solid fa-xmark"></i> Hapus Kotak</button>
+        <p id="cropStatus" class="layer-status">Mode potong: Bebas.</p>
+      </div></details>
+      
+      <!-- Slot Iklan (Muncul Saat Online Saja, Posisi Paling Bawah) -->
+      <div id="adContainer" class="section" style="display: none; padding: 10px; text-align: center; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(255,255,255,0.1); min-width: 250px; overflow: hidden;">
+        <p style="font-size: 10px; color: #64748b; margin-bottom: 5px;">Iklan (Sponsor)</p>
+        <ins class="adsbygoogle"
+             style="display:inline-block; width:250px; height:250px;"
+             data-ad-client="ca-app-pub-3169939987894157"
+             data-ad-slot="8970504003"></ins>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="mobile-history-bar" aria-label="Undo dan Redo">
+        <button id="mobileUndo" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
+        <button id="mobileRedo" title="Redo" disabled><i class="fa-solid fa-rotate-right"></i></button>
+      </div>
+      <canvas id="canvas" width="900" height="600"></canvas>
+      <canvas id="photoLayer" width="900" height="600"></canvas>
+      <label for="upload" id="stageUploadBtn" class="stage-upload-btn"><i class="fa-solid fa-upload"></i> Upload Foto</label>
+      <div class="hint" id="hint"><i class="fa-solid fa-circle-info"></i> Upload foto dulu untuk mulai edit</div>
+    </section>
+  </main>
+
+  <div id="savePreviewModal" class="save-preview-modal hidden-panel" role="dialog" aria-modal="true" aria-label="Preview hasil simpan">
+    <div class="save-preview-card">
+      <div class="save-preview-head">
+        <strong>Hasil Foto</strong>
+        <button id="savePreviewClose" class="secondary" type="button"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="small-note">Jika foto tidak masuk galeri, tekan lama gambar lalu pilih <b>Simpan gambar</b>. Di beberapa HP, file masuk ke folder Download/File Manager.</p>
+      <img id="savePreviewImage" alt="Hasil edit foto" />
+      <div class="btn-grid save-preview-actions">
+        <button id="savePreviewShare" class="success" type="button"><i class="fa-solid fa-share-nodes"></i> Bagikan</button>
+        <a id="savePreviewDownload" class="save-preview-download" download="mrd-photo-editor.png"><i class="fa-solid fa-download"></i> Unduh</a>
+      </div>
+    </div>
+  </div>
+
+  <nav class="mobile-edit-bar" aria-label="Toolbar edit HP">
+    <button data-mobile-tool="upload"><i class="fa-solid fa-image"></i><span>Foto</span></button>
+    <button data-mobile-tool="filters"><i class="fa-solid fa-palette"></i><span>Filter</span></button>
+    <button data-mobile-tool="addphoto"><i class="fa-solid fa-images"></i><span>Foto+</span></button>
+    <button data-mobile-tool="layout"><i class="fa-solid fa-border-all"></i><span>Layout</span></button>
+    <button data-mobile-tool="settings"><i class="fa-solid fa-sliders"></i><span>Atur</span></button>
+    <button data-mobile-tool="blur"><i class="fa-solid fa-droplet"></i><span>Kabur</span></button>
+    <button data-mobile-tool="bg"><i class="fa-solid fa-eraser"></i><span>Hapus Latar</span></button>
+    <button data-mobile-tool="magic"><i class="fa-solid fa-wand-sparkles"></i><span>Distraksi</span></button>
+    <button data-mobile-tool="text"><i class="fa-solid fa-font"></i><span>Teks</span></button>
+    <button data-mobile-tool="sticker"><i class="fa-solid fa-icons"></i><span>Stiker</span></button>
+    <button data-mobile-tool="crop"><i class="fa-solid fa-crop"></i><span>Crop</span></button>
+    <button data-mobile-tool="save"><i class="fa-solid fa-download"></i><span>Simpan</span></button>
+  </nav>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const canvas = $('canvas');
+    const ctx = canvas.getContext('2d');
+    const photoLayer = $('photoLayer');
+    const photoCtx = photoLayer.getContext('2d');
+    const upload = $('upload');
+    const hint = $('hint');
+    const stageUploadBtn = $('stageUploadBtn');
+    const filterStrength = $('filterStrength');
+    const filterStrengthVal = $('filterStrengthVal');
+    const filmLook = $('filmLook');
+    const filmLookVal = $('filmLookVal');
+    const filterAdjustPanel = $('filterAdjustPanel');
+    const selectedFilterName = $('selectedFilterName');
+    const closeFilterAdjust = $('closeFilterAdjust');
+    const fontSize = $('fontSize');
+    const fontSizeVal = $('fontSizeVal');
+    const fontFamily = $('fontFamily');
+    const textColor = $('textColor');
+    const eraserSize = $('eraserSize');
+    const eraserSizeVal = $('eraserSizeVal');
+    const eraserToggle = $('eraserToggle');
+    const eraserRoughness = $('eraserRoughness');
+    const eraserRoughnessVal = $('eraserRoughnessVal');
+    const toolNote = $('toolNote');
+    const bgAiStatus = $('bgAiStatus');
+
+    const toggleMagicBrush = $('toggleMagicBrush');
+    const magicBrushSize = $('magicBrushSize');
+    const magicBrushSizeVal = $('magicBrushSizeVal');
+
+    const adContainer = $('adContainer');
+
+    const addedPhotoSizeBox = $('addedPhotoSizeBox');
+    const addedPhotoSize = $('addedPhotoSize');
+    const addedPhotoSizeVal = $('addedPhotoSizeVal');
+
+    const btnBlurNone = $('blurNone');
+    const btnBlurStandard = $('blurStandard');
+    const btnBlurMotion = $('blurMotion');
+    const btnBlurFilm = $('blurFilm');
+    const blurStrengthSlider = $('blurStrengthSlider');
+    const blurStrengthDisplay = $('blurStrengthDisplay');
+    const focusSizeSlider = $('focusSizeSlider');
+    const focusSizeDisplay = $('focusSizeDisplay');
+    const toggleBlurFocus = $('toggleBlurFocus');
+    const clearBlurFocus = $('clearBlurFocus');
+
+    const controls = {
+      brightness: $('brightness'), contrast: $('contrast'), saturate: $('saturate'),
+      blur: $('blur'), sepia: $('sepia'), grayscale: $('grayscale')
+    };
+    const labels = {
+      brightness: $('brightnessVal'), contrast: $('contrastVal'), saturate: $('saturateVal'),
+      blur: $('blurVal'), sepia: $('sepiaVal'), grayscale: $('grayscaleVal')
+    };
+
+    const filterGroups = [
+      ['<i class="fa-solid fa-sliders"></i> Basic Filter', [['normal','Normal','Asli',''], ['basic_bright','Bright','Lebih terang',''], ['basic_soft','Soft','Lembut',''], ['basic_clean','Clean','Bersih','']]],
+      ['<i class="fa-solid fa-pencil"></i> Filter Sketch', [['sketch1','Sketch 1','Pensil','sketch-tone'], ['sketch2','Sketch 2','Tebal','sketch-tone'], ['sketch3','Sketch 3','Pensil halus','sketch-tone'], ['sketch4','Sketch 4','Kertas','sketch-tone']]],
+      ['<i class="fa-solid fa-camera"></i> Filter HDR', [['hdr1','HDR 1','Natural','hdr-tone'], ['hdr2','HDR 2','Tajam natural','hdr-tone'], ['hdr3','HDR 3','Landscape','hdr-tone'], ['hdr4','HDR 4','Night HDR','hdr-tone']]],
+      ['<i class="fa-solid fa-couch"></i> Filter Interior', [['interior1','Interior 1','Clean room','interior-tone'], ['interior2','Interior 2','Warm cozy','interior-tone'], ['interior3','Interior 3','Bright room','interior-tone'], ['interior4','Interior 4','Luxury','interior-tone']]],
+      ['<i class="fa-solid fa-film"></i> Filter Film', [['film1','Film Sunset','Senja oranye','film-tone-1'], ['film2','Film Teal','Movie biru','film-tone-2'], ['film3','Film Kodak','Kuning klasik','film-tone-3'], ['film4','Film Moody','Dramatic','film-tone-4']]],
+      ['<i class="fa-solid fa-sun"></i> Filter Warm', [['warm1','Warm 1','Hangat',''], ['warm2','Warm 2','Sunset',''], ['warm3','Warm 3','Golden',''], ['warm4','Warm 4','Peach','']]],
+      ['<i class="fa-solid fa-snowflake"></i> Filter Cool', [['cool1','Cool 1','Dingin',''], ['cool2','Cool 2','Blue',''], ['cool3','Cool 3','Ocean',''], ['cool4','Cool 4','Ice','']]],
+      ['<i class="fa-solid fa-radio"></i> Filter Vintage', [['vintage1','Vintage 1','Jadul',''], ['vintage2','Vintage 2','Retro',''], ['vintage3','Vintage 3','Fade',''], ['vintage4','Vintage 4','Classic','']]],
+      ['<i class="fa-solid fa-circle-half-stroke"></i> Black & White', [['mono1','Mono 1','Soft B&W',''], ['mono2','Mono 2','Kontras',''], ['mono3','Mono 3','Halus',''], ['mono4','Mono 4','Dramatic','']]],
+      ['<i class="fa-solid fa-wand-magic-sparkles"></i> Color Pop', [['pop1','Pop 1','Vivid',''], ['pop2','Pop 2','Candy',''], ['pop3','Pop 3','Fresh',''], ['pop4','Pop 4','Neon','']]]
+    ];
+
+    const presets = {
+      normal:{b:100,c:100,s:100,bl:0,se:0,g:0}, basic_bright:{b:122,c:105,s:110,bl:0,se:0,g:0}, basic_soft:{b:112,c:86,s:104,bl:1,se:0,g:0}, basic_clean:{b:108,c:112,s:112,bl:0,se:0,g:0},
+      sketch1:{b:112,c:112,s:0,bl:0,se:0,g:100}, sketch2:{b:106,c:128,s:0,bl:0,se:0,g:100}, sketch3:{b:150,c:150,s:0,bl:1,se:0,g:100}, sketch4:{b:114,c:108,s:0,bl:0,se:8,g:100},
+      hdr1:{b:108,c:128,s:122,bl:0,se:0,g:0}, hdr2:{b:100,c:136,s:124,bl:0,se:0,g:0}, hdr3:{b:116,c:138,s:150,bl:0,se:0,g:0}, hdr4:{b:92,c:158,s:126,bl:0,se:0,g:0},
+      interior1:{b:122,c:122,s:124,bl:0,se:0,g:0}, interior2:{b:116,c:112,s:148,bl:0,se:24,g:0}, interior3:{b:138,c:116,s:130,bl:0,se:0,g:0}, interior4:{b:112,c:142,s:136,bl:0,se:14,g:0},
+      film1:{b:112,c:118,s:132,bl:0,se:12,g:0}, film2:{b:96,c:132,s:118,bl:0,se:4,g:0}, film3:{b:110,c:112,s:118,bl:0,se:26,g:0}, film4:{b:88,c:150,s:92,bl:0,se:10,g:0},
+      warm1:{b:110,c:105,s:126,bl:0,se:16,g:0}, warm2:{b:116,c:110,s:135,bl:0,se:25,g:0}, warm3:{b:108,c:118,s:122,bl:0,se:20,g:0}, warm4:{b:114,c:100,s:140,bl:0,se:18,g:0},
+      cool1:{b:98,c:116,s:112,bl:0,se:0,g:0}, cool2:{b:94,c:122,s:108,bl:0,se:0,g:0}, cool3:{b:102,c:118,s:118,bl:1,se:0,g:0}, cool4:{b:90,c:132,s:110,bl:0,se:0,g:0},
+      vintage1:{b:104,c:92,s:80,bl:0,se:36,g:0}, vintage2:{b:108,c:88,s:76,bl:0,se:46,g:0}, vintage3:{b:98,c:96,s:82,bl:1,se:38,g:0}, vintage4:{b:112,c:90,s:78,bl:0,se:42,g:0},
+      mono1:{b:108,c:112,s:0,bl:0,se:0,g:100}, mono2:{b:96,c:145,s:0,bl:0,se:0,g:100}, mono3:{b:116,c:94,s:0,bl:1,se:0,g:100}, mono4:{b:92,c:165,s:0,bl:0,se:0,g:100},
+      pop1:{b:110,c:118,s:165,bl:0,se:0,g:0}, pop2:{b:116,c:112,s:205,bl:0,se:0,g:0}, pop3:{b:112,c:108,s:176,bl:0,se:0,g:0}, pop4:{b:108,c:130,s:220,bl:0,se:0,g:0}
+    };
+
+    let originalImage = null, originalImageSrc = '', activePreset = 'normal', activeItem = null, crop = null;
+    let cropRatio = null, cropLabel = 'Bebas';
+    let mainAdjustments = {brightness:100,contrast:100,saturate:100,blur:0,sepia:0,grayscale:0};
+    let imageState = {x:0,y:0,w:0,h:0}, texts = [], stickers = [], photoItems = [], history = [], redoStack = [];
+    let photoItemId = 0;
+    let mergedBackup = null;
+    let photoLayersMerged = false;
+    let isCropping = false, isDragging = false, dragOffset = {x:0,y:0};
+    let cropStartPoint = null;
+    let eraseStrokes = [], isErasing = false, eraserMode = false, pickBgMode = false;
+    let whiteCleanPatches = [];
+    let bgRemove = { enabled:false, useAi:false, color:null, tolerance:70 };
+    let magicEraserMode = false;
+    let currentMagicStroke = null;
+    
+    // Blur & AI variables
+    let blurMode = 'none';
+    let blurStrength = 50;
+    let focusSizePct = 50;
+    let focusStrokes = [];
+    let currentFocusStroke = null;
+    let isSettingFocus = false;
+    let isDraggingFocus = false;
+    let subjectMaskCanvas = null;
+    let isDetectingSubject = false;
+    let selfieSegmentationInstance = null;
+
+    function renderFilterGroups() {
+      const root = $('filterGroups');
+      if (!root) return;
+      root.innerHTML = filterGroups.map(([title, items]) => `
+        <div class="filter-group-box"><div class="filter-category-title">${title} <span>${items.length} filter</span></div><div class="filter-grid">
+          ${items.map(([id, name, sub, cls]) => `<button class="filter-btn ${cls} ${id==='normal'?'active':''}" data-preset="${id}"><strong>${name}</strong><span>${sub}</span></button>`).join('')}
+        </div></div>`).join('');
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => applyPreset(btn.dataset.preset)));
+    }
+
+    function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+    function drawPlaceholder(){if(stageUploadBtn)stageUploadBtn.classList.remove('hidden');ctx.clearRect(0,0,canvas.width,canvas.height);const bg=ctx.createLinearGradient(0,0,canvas.width,canvas.height);bg.addColorStop(0,'#0f172a');bg.addColorStop(.55,'#1e1b4b');bg.addColorStop(1,'#0e7490');ctx.fillStyle=bg;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='rgba(255,255,255,.10)';roundRect(250,145,400,270,34);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.20)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 44px Arial';ctx.textAlign='center';ctx.fillText('MRD Photo Editor',canvas.width/2,260);ctx.font='22px Arial';ctx.fillStyle='#dbeafe';ctx.fillText('Tekan Upload Foto untuk mulai edit',canvas.width/2,310);ctx.font='18px Arial';ctx.fillStyle='#a5b4fc';ctx.fillText('Filter • Atur Halus • Teks • Stiker • Crop',canvas.width/2,345);ctx.textAlign='left';}
+    function clamp(v,min=0,max=255){return Math.max(min,Math.min(max,v));}
+    function val(el, fallback){return el ? Number(el.value) : fallback;}
+    function defaultAdjustments(){return {brightness:100,contrast:100,saturate:100,blur:0,sepia:0,grayscale:0};}
+    function buildFilterStringFromAdjustments(a){const d=defaultAdjustments();const v={...d,...a};return `brightness(${v.brightness}%) contrast(${v.contrast}%) saturate(${v.saturate}%) blur(${v.blur}px) sepia(${v.sepia}%) grayscale(${v.grayscale}%)`;}
+    function getFilterString(){return buildFilterStringFromAdjustments(mainAdjustments);}
+    function syncControlsFromMain(){
+      if(controls.brightness)controls.brightness.value=mainAdjustments.brightness;
+      if(controls.contrast)controls.contrast.value=mainAdjustments.contrast;
+      if(controls.saturate)controls.saturate.value=mainAdjustments.saturate;
+      if(controls.blur)controls.blur.value=mainAdjustments.blur;
+      if(controls.sepia)controls.sepia.value=mainAdjustments.sepia;
+      if(controls.grayscale)controls.grayscale.value=mainAdjustments.grayscale;
+      if(addedPhotoSizeBox) addedPhotoSizeBox.classList.add('hidden-panel');
+      updateLabels();
+    }
+    function updateMainAdjustmentsFromControls(){
+      mainAdjustments={
+        brightness:val(controls.brightness,100),
+        contrast:val(controls.contrast,100),
+        saturate:val(controls.saturate,100),
+        blur:val(controls.blur,0),
+        sepia:val(controls.sepia,0),
+        grayscale:val(controls.grayscale,0)
+      };
+    }
+    function updateLabels(){if(filterStrengthVal&&filterStrength)filterStrengthVal.textContent=filterStrength.value+'%';if(filmLook&&filterStrength)filmLook.value=filterStrength.value;if(filmLookVal&&filmLook)filmLookVal.textContent=filmLook.value+'%';if(fontSizeVal&&fontSize)fontSizeVal.textContent=fontSize.value+'px';if(eraserSizeVal&&eraserSize)eraserSizeVal.textContent=eraserSize.value+'px';if(eraserRoughnessVal&&eraserRoughness)eraserRoughnessVal.textContent=eraserRoughness.value+'%';if(magicBrushSizeVal&&magicBrushSize)magicBrushSizeVal.textContent=magicBrushSize.value+'px';}
+    
+    function setBlurMode(mode) {
+       blurMode = mode;
+       [btnBlurNone, btnBlurStandard, btnBlurMotion, btnBlurFilm].forEach(b => {
+           if(b) {
+               b.className = 'secondary';
+               b.style.border = '1px solid rgba(255,255,255,0.08)';
+               b.style.background = '';
+           }
+       });
+       let activeBtn = btnBlurNone;
+       if(mode === 'standard') activeBtn = btnBlurStandard;
+       if(mode === 'motion') activeBtn = btnBlurMotion;
+       if(mode === 'film') activeBtn = btnBlurFilm;
+       
+       if(activeBtn) {
+           activeBtn.className = 'active';
+           activeBtn.style.border = '1px solid #38bdf8';
+           activeBtn.style.background = 'linear-gradient(135deg, #0284c7, #2563eb)';
+       }
+       
+       if(mode !== 'none' && !subjectMaskCanvas && !isDetectingSubject && focusStrokes.length === 0) {
+           detectSubjectAI();
+       }
+       
+       render();
+       saveHistory();
+    }
+    
+    function updateHistoryButtons(){
+        const undoBtn = $('mobileUndo');
+        const redoBtn = $('mobileRedo');
+        if(undoBtn) undoBtn.disabled = history.length < 2;
+        if(redoBtn) redoBtn.disabled = redoStack.length < 1;
+    }
+
+    function makeHistorySnapshot(){
+        return {
+            filters:JSON.parse(JSON.stringify(mainAdjustments)),
+            texts:JSON.parse(JSON.stringify(texts)),
+            stickers:JSON.parse(JSON.stringify(stickers)),
+            photoItems:photoItems.map(p=>({type:'photo',src:p.src,x:p.x,y:p.y,w:p.w,h:p.h,origW:p.origW,origH:p.origH,scale:p.scale,preset:p.preset||'normal',filterStrength:p.filterStrength||100,adjustments:p.adjustments||defaultAdjustments()})),
+            photoLayersMerged,
+            imageState:{...imageState},
+            crop:crop?{...crop}:null,
+            activePreset,
+            filterStrength:filterStrength?filterStrength.value:getAutoStrength(activePreset),
+            eraseStrokes:JSON.parse(JSON.stringify(eraseStrokes)),
+            whiteCleanPatches:JSON.parse(JSON.stringify(whiteCleanPatches)),
+            bgRemove:JSON.parse(JSON.stringify(bgRemove)),
+            blurSettings:{mode:blurMode,strength:blurStrength,size:focusSizePct,focusStrokes:JSON.parse(JSON.stringify(focusStrokes))},
+            subjectMaskUrl:subjectMaskCanvas?subjectMaskCanvas.toDataURL('image/png'):null
+        };
+    }
+
+    function applyHistorySnapshot(prev, pushNewHistory=false){
+        mainAdjustments={...defaultAdjustments(),...(prev.filters||{})};
+        syncControlsFromMain();
+        texts=JSON.parse(JSON.stringify(prev.texts||[]));
+        stickers=JSON.parse(JSON.stringify(prev.stickers||[]));
+        restorePhotoItems(prev.photoItems||[]);
+        photoLayersMerged=!!prev.photoLayersMerged;
+        imageState={...prev.imageState};
+        crop=prev.crop?{...prev.crop}:null;
+        eraseStrokes=prev.eraseStrokes?JSON.parse(JSON.stringify(prev.eraseStrokes)):[];
+        whiteCleanPatches=prev.whiteCleanPatches?JSON.parse(JSON.stringify(prev.whiteCleanPatches)):[];
+        bgRemove=prev.bgRemove?JSON.parse(JSON.stringify(prev.bgRemove)):{enabled:false,useAi:false,color:null,tolerance:70};
+        activePreset=prev.activePreset||'normal';
+        if(filterStrength)filterStrength.value=Math.min(100,prev.filterStrength||getAutoStrength(activePreset));
+        const bs=prev.blurSettings||{mode:'none',strength:50,size:50,focusStrokes:[]};
+        blurMode=bs.mode;
+        blurStrength=bs.strength;
+        focusSizePct=bs.size;
+        focusStrokes=bs.focusStrokes||[];
+        if(blurStrengthSlider) blurStrengthSlider.value=blurStrength;
+        if(blurStrengthDisplay) blurStrengthDisplay.textContent=blurStrength+'%';
+        if(focusSizeSlider) focusSizeSlider.value=focusSizePct;
+        if(focusSizeDisplay) focusSizeDisplay.textContent=focusSizePct+'px';
+        const prevMaskUrl=prev.subjectMaskUrl||(prev.blurSettings&&prev.blurSettings.autoMaskUrl);
+        const finish=()=>{
+          setActiveFilter(activePreset);
+          showFilterAdjustPanel(activePreset);
+          updateLabels();
+          render();
+          if(pushNewHistory) history.push(makeHistorySnapshot());
+          updateHistoryButtons();
+        };
+        if(prevMaskUrl){
+          const img=new Image();
+          img.onload=()=>{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);subjectMaskCanvas=c;finish();};
+          img.src=prevMaskUrl;
+        }else{
+          subjectMaskCanvas=null;
+          finish();
+        }
+    }
+
+    function saveHistory(){
+        if(!originalImage)return;
+        history.push(makeHistorySnapshot());
+        redoStack=[];
+        if(history.length>25)history.shift();
+        updateHistoryButtons();
+    }
+    
+    function restoreHistory(){
+        if(history.length<2)return;
+        const current=history.pop();
+        redoStack.push(current);
+        const prev=history[history.length-1];
+        applyHistorySnapshot(prev,false);
+    }
+
+    function redoHistory(){
+        if(!redoStack.length)return;
+        const next=redoStack.pop();
+        history.push(next);
+        applyHistorySnapshot(next,false);
+    }
+
+    function resizeCanvasToImageAspect(img=originalImage){
+        if(!img)return;
+        const maxSide = 1400;
+        const minSide = 520;
+        const ratio = img.width / img.height;
+        let w, h;
+        if(img.width >= img.height){
+          w = Math.min(maxSide, Math.max(minSide, img.width));
+          h = Math.round(w / ratio);
+        }else{
+          h = Math.min(maxSide, Math.max(minSide, img.height));
+          w = Math.round(h * ratio);
+        }
+        canvas.width = Math.max(320, Math.round(w));
+        canvas.height = Math.max(320, Math.round(h));
+        photoLayer.width = canvas.width;
+        photoLayer.height = canvas.height;
+      }
+
+    function fitImageToCanvas(){
+        if(!originalImage)return;
+        const ratio=Math.min(canvas.width/originalImage.width,canvas.height/originalImage.height);
+        imageState.w=originalImage.width*ratio;
+        imageState.h=originalImage.height*ratio;
+        imageState.x=(canvas.width-imageState.w)/2;
+        imageState.y=(canvas.height-imageState.h)/2;
+    }
+
+    function useOriginalPhotoCanvas(){
+        if(!originalImage)return alert('Upload foto dulu.');
+        resizeCanvasToImageAspect(originalImage);
+        imageState={x:0,y:0,w:canvas.width,h:canvas.height};
+        crop=null;
+        cropStartPoint=null;
+        isCropping=false;
+        updateHint('Kanvas mengikuti ukuran/rasio foto asli.');
+        render();
+        saveHistory();
+    }
+
+    async function detectSubjectAI(onComplete) {
+        if (!originalImage || isDetectingSubject) return;
+        
+        const statusBlur = $('blurAiStatus');
+        if (statusBlur && blurMode !== 'none') statusBlur.style.display = 'block';
+
+        isDetectingSubject = true;
+
+        try {
+            if (!window.SelfieSegmentation) throw new Error("Library Deteksi AI belum dimuat dari internet.");
+            if (!selfieSegmentationInstance) {
+                selfieSegmentationInstance = new SelfieSegmentation({locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
+                }});
+                selfieSegmentationInstance.setOptions({ modelSelection: 1 });
+            }
+
+            selfieSegmentationInstance.onResults((results) => {
+                const tCanvas = document.createElement('canvas');
+                tCanvas.width = originalImage.width;
+                tCanvas.height = originalImage.height;
+                const tCtx = tCanvas.getContext('2d');
+                
+                tCtx.drawImage(results.segmentationMask, 0, 0, tCanvas.width, tCanvas.height);
+                tCtx.globalCompositeOperation = 'source-in';
+                tCtx.fillStyle = 'white';
+                tCtx.fillRect(0, 0, tCanvas.width, tCanvas.height);
+                
+                subjectMaskCanvas = tCanvas;
+                isDetectingSubject = false;
+                
+                if (statusBlur) statusBlur.style.display = 'none';
+                if (onComplete) onComplete(null);
+                
+                render();
+                saveHistory();
+            });
+
+            await selfieSegmentationInstance.send({image: originalImage});
+        } catch(e) {
+            console.error(e);
+            isDetectingSubject = false;
+            if (statusBlur) statusBlur.style.display = 'none';
+            if (onComplete) onComplete(e);
+            else alert("Gagal mendeteksi otomatis. Pastikan internet Anda aktif untuk mengunduh model AI pertama kali.");
+        }
+    }
+    
+    function fitRectContain(imgW,imgH,x,y,w,h){
+      const ratio=Math.min(w/imgW,h/imgH);
+      const nw=imgW*ratio, nh=imgH*ratio;
+      return {x:x+(w-nw)/2,y:y+(h-nh)/2,w:nw,h:nh};
+    }
+    function setLayoutStatus(message){const el=$('layoutStatus');if(el)el.textContent=message;}
+    function getFirstPhotoItem(){return photoItems.find(p=>p.img&&p.img.complete)||photoItems[0]||null;}
+    function applyLayout(mode){
+      if(!originalImage)return alert('Upload foto dulu.');
+      const margin=28;
+      const gap=18;
+      const item=getFirstPhotoItem();
+
+      if(mode==='full'){
+        fitImageToCanvas();
+        if(item){
+          const r=fitRectContain(item.origW||item.w,item.origH||item.h,canvas.width*0.62,canvas.height*0.58,canvas.width*0.30,canvas.height*0.30);
+          Object.assign(item,r);
+          item.origW = r.w; item.origH = r.h; item.scale = 100;
+          if(addedPhotoSize && activeItem === item) { addedPhotoSize.value = 100; addedPhotoSizeVal.textContent = '100%'; }
+        }
+        setLayoutStatus('Tata letak 1 Foto Penuh diterapkan. Foto tambahan menjadi kecil di kanan bawah.');
+      }
+
+      if(mode==='side'){
+        const boxW=(canvas.width-margin*2-gap)/2;
+        const boxH=canvas.height-margin*2;
+        Object.assign(imageState,fitRectContain(originalImage.width,originalImage.height,margin,margin,boxW,boxH));
+        if(item){
+          const iw=item.img.naturalWidth||item.img.width, ih=item.img.naturalHeight||item.img.height;
+          const r=fitRectContain(iw,ih,margin+boxW+gap,margin,boxW,boxH);
+          Object.assign(item,r);
+          item.origW = r.w; item.origH = r.h; item.scale = 100;
+          if(addedPhotoSize && activeItem === item) { addedPhotoSize.value = 100; addedPhotoSizeVal.textContent = '100%'; }
+        }else{
+          setLayoutStatus('Tata letak 2 Samping butuh foto tambahan.');
+          render();saveHistory();return;
+        }
+        setLayoutStatus('Tata letak 2 Samping diterapkan.');
+      }
+
+      if(mode==='topBottom'){
+        const boxW=canvas.width-margin*2;
+        const boxH=(canvas.height-margin*2-gap)/2;
+        Object.assign(imageState,fitRectContain(originalImage.width,originalImage.height,margin,margin,boxW,boxH));
+        if(item){
+          const iw=item.img.naturalWidth||item.img.width, ih=item.img.naturalHeight||item.img.height;
+          const r=fitRectContain(iw,ih,margin,margin+boxH+gap,boxW,boxH);
+          Object.assign(item,r);
+          item.origW = r.w; item.origH = r.h; item.scale = 100;
+          if(addedPhotoSize && activeItem === item) { addedPhotoSize.value = 100; addedPhotoSizeVal.textContent = '100%'; }
+        }else{
+          setLayoutStatus('Tata letak Atas Bawah butuh foto tambahan.');
+          render();saveHistory();return;
+        }
+        setLayoutStatus('Tata letak 2 Atas Bawah diterapkan.');
+      }
+
+      if(mode==='pip'){
+        fitImageToCanvas();
+        if(item){
+          const iw=item.img.naturalWidth||item.img.width, ih=item.img.naturalHeight||item.img.height;
+          const pipW=canvas.width*0.30;
+          const pipH=canvas.height*0.30;
+          const r=fitRectContain(iw,ih,canvas.width-pipW-margin,canvas.height-pipH-margin,pipW,pipH);
+          Object.assign(item,r);
+          item.origW = r.w; item.origH = r.h; item.scale = 100;
+          if(addedPhotoSize && activeItem === item) { addedPhotoSize.value = 100; addedPhotoSizeVal.textContent = '100%'; }
+        }else{
+          setLayoutStatus('Foto kecil butuh foto tambahan.');
+          render();saveHistory();return;
+        }
+        setLayoutStatus('Tata letak Foto Kecil diterapkan.');
+      }
+
+      activeItem=null;
+      render();saveHistory();
+    }
+    function centerAllPhotos(){
+      if(!originalImage)return alert('Upload foto dulu.');
+      fitImageToCanvas();
+      photoItems.forEach((p,i)=>{
+        const iw=p.img?.naturalWidth||p.w, ih=p.img?.naturalHeight||p.h;
+        const maxW=canvas.width*(0.36-(Math.min(i,2)*0.04));
+        const maxH=canvas.height*(0.36-(Math.min(i,2)*0.04));
+        const r=fitRectContain(iw,ih,(canvas.width-maxW)/2+24*(i+1),(canvas.height-maxH)/2+24*(i+1),maxW,maxH);
+        Object.assign(p,r); p.origW=r.w; p.origH=r.h; p.scale=100;
+      });
+      setLayoutStatus('Semua foto dipusatkan.');
+      activeItem=null;render();saveHistory();
+    }
+    function resizeCanvasToPreset(type){
+      if(type==='square'){canvas.width=900;canvas.height=900;photoLayer.width=900;photoLayer.height=900;}
+      if(type==='wide'){canvas.width=1024;canvas.height=576;photoLayer.width=1024;photoLayer.height=576;}
+      if(originalImage)fitImageToCanvas();
+      activeItem=null;crop=null;
+      setLayoutStatus(type==='square'?'Kanvas diubah ke 1:1.':'Kanvas diubah ke 16:9.');
+      render();saveHistory();
+    }
+
+    function mapPresetToAdjustments(presetId){
+      const p=presets[presetId]||presets.normal;
+      return {brightness:p.b,contrast:p.c,saturate:p.s,blur:p.bl,sepia:p.se,grayscale:p.g};
+    }
+    function getAutoStrength(presetId){
+      if(presetId==='normal')return 0;
+      if(presetId.startsWith('sketch'))return 70;
+      if(presetId.startsWith('hdr'))return 72;
+      if(presetId.startsWith('film'))return 68;
+      return 60;
+    }
+    function blendValue(base,target,strength){return Math.round(base+(target-base)*(strength/100));}
+    function applyFilterToMain(presetId,strength){
+      const target=mapPresetToAdjustments(presetId), base=defaultAdjustments();
+      mainAdjustments={brightness:blendValue(base.brightness,target.brightness,strength),contrast:blendValue(base.contrast,target.contrast,strength),saturate:blendValue(base.saturate,target.saturate,strength),blur:blendValue(base.blur,target.blur,strength),sepia:blendValue(base.sepia,target.sepia,strength),grayscale:blendValue(base.grayscale,target.grayscale,strength)};
+      syncControlsFromMain();
+    }
+    function setActiveFilter(preset){document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.preset===preset));}
+    function showFilterAdjustPanel(preset){
+      if(!filterAdjustPanel)return;
+      filterAdjustPanel.classList.remove('hidden-panel');
+      filterAdjustPanel.open=true;
+      const btn=document.querySelector(`[data-preset="${preset}"]`);
+      const name=btn?btn.querySelector('strong')?.textContent||preset:preset;
+      selectedFilterName.innerHTML=`<i class="fa-solid fa-palette"></i> Filter aktif: ${name}`;
+    }
+    function hideFilterAdjustPanel(){if(filterAdjustPanel){filterAdjustPanel.classList.add('hidden-panel');filterAdjustPanel.open=false;}}
+    function applyPreset(preset){
+      if(!originalImage)return alert('Upload foto dulu sebelum memakai filter.');
+      activePreset=preset;
+      const strength=getAutoStrength(preset);
+      if(filterStrength)filterStrength.value=strength;
+      applyFilterToMain(preset,strength);
+      setActiveFilter(preset);
+      showFilterAdjustPanel(preset);
+      updateLabels();
+      render();saveHistory();
+    }
+    function restorePhotoItems(saved){
+      photoItems=[];
+      (saved||[]).forEach(item=>{
+        const img=new Image();
+        const obj={type:'photo',id:++photoItemId,img,src:item.src,x:item.x,y:item.y,w:item.w,h:item.h,origW:item.origW||item.w,origH:item.origH||item.h,scale:item.scale||100,preset:item.preset||'normal',filterStrength:item.filterStrength||100,adjustments:item.adjustments||defaultAdjustments()};
+        img.onload=()=>render();
+        img.src=item.src;
+        photoItems.push(obj);
+      });
+      updatePhotoLayerStatus();
+    }
+
+    function getPointerPos(e){const rect=canvas.getBoundingClientRect();const clientX=e.touches?e.touches[0].clientX:e.clientX;const clientY=e.touches?e.touches[0].clientY:e.clientY;return{x:(clientX-rect.left)*(canvas.width/rect.width),y:(clientY-rect.top)*(canvas.height/rect.height)};}
+    function isPointInItem(p,item){if(!item)return false;return p.x>=item.x&&p.x<=item.x+(item.w||0)&&p.y>=item.y&&p.y<=item.y+(item.h||0);}
+    function findTopItem(p){
+      for(let i=texts.length-1;i>=0;i--){const t=texts[i];ctx.font=`${t.size}px ${t.font}`;const lines=String(t.text||'').split('\n');const width=Math.max(...lines.map(line=>ctx.measureText(line).width),10);const height=t.size*1.25*lines.length;if(p.x>=t.x&&p.x<=t.x+width&&p.y>=t.y-t.size&&p.y<=t.y+height)return t;}
+      for(let i=stickers.length-1;i>=0;i--){const s=stickers[i];const size=s.size||54;if(p.x>=s.x-size/2&&p.x<=s.x+size/2&&p.y>=s.y-size/2&&p.y<=s.y+size/2)return s;}
+      for(let i=photoItems.length-1;i>=0;i--){if(isPointInItem(p,photoItems[i]))return photoItems[i];}
+      return null;
+    }
+    function updateHint(text){hint.innerHTML=`<i class="fa-solid fa-circle-info"></i> ${text}`;}
+    function updateCropStatus(){
+      const el=$('cropStatus');
+      if(el) el.textContent = cropRatio ? `Mode potong: ${cropLabel}. Geser kotak atau tarik ulang area.` : 'Mode potong: Bebas. Tekan dan tarik area sendiri.';
+      document.querySelectorAll('.crop-preset').forEach(btn=>{
+        const r=btn.dataset.cropRatio;
+        const active = cropRatio === null ? r==='free' : Number(r)===cropRatio && btn.dataset.cropLabel===cropLabel;
+        btn.classList.toggle('active',active);
+      });
+    }
+    function makeCropFromRatio(ratio){
+      if(!originalImage)return;
+      let baseX=imageState.x, baseY=imageState.y, baseW=imageState.w, baseH=imageState.h;
+      if(!baseW||!baseH){baseX=0;baseY=0;baseW=canvas.width;baseH=canvas.height;}
+      let w=baseW*0.82;
+      let h=w/ratio;
+      if(h>baseH*0.82){h=baseH*0.82;w=h*ratio;}
+      crop={x:baseX+(baseW-w)/2,y:baseY+(baseH-h)/2,w,h};
+    }
+    function setCropPreset(label, ratioValue){
+      if(!originalImage)return alert('Upload foto dulu.');
+      cropLabel=label;
+      cropRatio=ratioValue==='free'?null:Number(ratioValue);
+      isCropping=true;
+      if(cropRatio) makeCropFromRatio(cropRatio);
+      else crop=null;
+      updateCropStatus();
+      updateHint(cropRatio ? `Mode ${cropLabel}. Geser kotak kuning lalu tekan Terapkan Potong.` : 'Mode Bebas. Tekan dan tarik area di foto.');
+      render();
+    }
+    function normalizeCropByRatio(start, end, ratio){
+      const dx=end.x-start.x;
+      const dy=end.y-start.y;
+      if(!ratio)return {x:start.x,y:start.y,w:dx,h:dy};
+      const sx=dx<0?-1:1;
+      const sy=dy<0?-1:1;
+      let w=Math.abs(dx);
+      let h=Math.abs(dy);
+      if(w<1&&h<1)return {x:start.x,y:start.y,w:0,h:0};
+      if(w/(h||1)>ratio) w=h*ratio;
+      else h=w/ratio;
+      return {x:start.x,y:start.y,w:w*sx,h:h*sy};
+    }
+    function keepCropInsideCanvas(){
+      if(!crop)return;
+      const normalized = {
+        x: Math.min(crop.x, crop.x + crop.w),
+        y: Math.min(crop.y, crop.y + crop.h),
+        w: Math.abs(crop.w),
+        h: Math.abs(crop.h)
+      };
+      normalized.x = Math.max(0, Math.min(canvas.width - normalized.w, normalized.x));
+      normalized.y = Math.max(0, Math.min(canvas.height - normalized.h, normalized.y));
+      crop = normalized;
+    }
+    function updatePhotoLayerStatus(){
+      const el=$('photoLayerStatus'); if(!el)return;
+      if(!photoItems.length) el.textContent='Belum ada foto tambahan. Klik Gabungkan agar semua fitur bekerja di dua foto.';
+      else if(photoLayersMerged) el.textContent='Foto tambahan sudah digabung ke foto utama. Klik Pisahkan untuk mengembalikan layer.';
+      else el.textContent=`${photoItems.length} foto tambahan aktif. Klik Gabungkan agar filter dan crop menyatu.`;
+    }
+
+    function drawImageWithBgRemoval(targetCtx,img,x,y,w,h,opts={}){
+      if(!img)return;
+      targetCtx.save();
+      targetCtx.filter=opts.filter||'none';
+      if(bgRemove.enabled && (bgRemove.color || bgRemove.useAi)){
+        const off=document.createElement('canvas');
+        off.width=Math.max(1,Math.round(w)); off.height=Math.max(1,Math.round(h));
+        const octx=off.getContext('2d');
+        octx.drawImage(img,0,0,off.width,off.height);
+        let data=octx.getImageData(0,0,off.width,off.height);
+        let d=data.data;
+
+        if (bgRemove.useAi && subjectMaskCanvas) {
+            const maskOff = document.createElement('canvas');
+            maskOff.width = off.width; maskOff.height = off.height;
+            const mctx = maskOff.getContext('2d');
+            mctx.drawImage(subjectMaskCanvas, 0, 0, off.width, off.height);
+            const maskData = mctx.getImageData(0,0,off.width,off.height).data;
+            for(let i=0;i<d.length;i+=4){
+                const maskVal = maskData[i];
+                d[i+3] = maskVal > 20 ? maskVal : 0;
+            }
+        } else if (bgRemove.color) {
+            const c=bgRemove.color,t=bgRemove.tolerance;
+            for(let i=0;i<d.length;i+=4){
+              const dist=Math.sqrt((d[i]-c.r)**2+(d[i+1]-c.g)**2+(d[i+2]-c.b)**2);
+              if(dist<t)d[i+3]=0;
+              else if(dist<t+35)d[i+3]=Math.min(d[i+3],Math.round(((dist-t)/35)*255));
+            }
+        }
+        octx.putImageData(data,0,0);
+        targetCtx.drawImage(off,x,y,w,h);
+      }else targetCtx.drawImage(img,x,y,w,h);
+      targetCtx.restore();
+    }
+
+    function drawImageWithEraserAndClean(targetCtx,img,x,y,w,h){
+      const off=document.createElement('canvas');off.width=canvas.width;off.height=canvas.height;const octx=off.getContext('2d');
+      drawImageWithBgRemoval(octx,img,x,y,w,h,{filter:getFilterString()});
+      eraseStrokes.forEach(stroke=>{octx.save();octx.globalCompositeOperation='destination-out';octx.lineCap='round';octx.lineJoin='round';octx.lineWidth=stroke.size;octx.strokeStyle='rgba(0,0,0,1)';octx.beginPath();stroke.points.forEach((pt,i)=>{if(i===0)octx.moveTo(pt.x,pt.y);else octx.lineTo(pt.x,pt.y);});octx.stroke();octx.restore();});
+      whiteCleanPatches.forEach(p=>{octx.save();octx.globalCompositeOperation='destination-out';const g=octx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,`rgba(0,0,0,${p.a})`);g.addColorStop(1,'rgba(0,0,0,0)');octx.fillStyle=g;octx.beginPath();octx.arc(p.x,p.y,p.r,0,Math.PI*2);octx.fill();octx.restore();});
+      targetCtx.drawImage(off,0,0);
+    }
+
+    function drawPhotoItem(targetCtx,p,showActive=true){
+      if(!p.img)return;
+      targetCtx.save();
+      targetCtx.filter=buildFilterStringFromAdjustments(p.adjustments||defaultAdjustments());
+      targetCtx.drawImage(p.img,p.x,p.y,p.w,p.h);
+      targetCtx.restore();
+      if(showActive&&activeItem===p){targetCtx.save();targetCtx.strokeStyle='#67e8f9';targetCtx.lineWidth=3;targetCtx.setLineDash([10,7]);targetCtx.strokeRect(p.x,p.y,p.w,p.h);targetCtx.restore();}
+    }
+
+    function generateBlurredBackground(mode, strength) {
+        if(!originalImage) return null;
+        const off = document.createElement('canvas');
+        off.width = canvas.width; off.height = canvas.height;
+        const octx = off.getContext('2d');
+        
+        if(mode === 'motion') {
+            octx.filter = `blur(${strength/2}px)`;
+            for(let i=-5; i<=5; i++) {
+                octx.globalAlpha = 0.1;
+                octx.drawImage(originalImage, imageState.x + i*5, imageState.y, imageState.w, imageState.h);
+            }
+            octx.globalAlpha = 1;
+        } else {
+            octx.filter = `blur(${Math.max(1, strength/5)}px)`;
+            octx.drawImage(originalImage, imageState.x, imageState.y, imageState.w, imageState.h);
+        }
+        
+        if(mode === 'film') {
+            octx.fillStyle = 'rgba(0,0,0,0.15)';
+            octx.fillRect(0,0,off.width,off.height);
+            octx.fillStyle = 'rgba(255,255,255,0.05)';
+            for(let i=0; i<off.width; i+=4) {
+                octx.fillRect(i, 0, 1, off.height);
+            }
+        }
+        return off;
+    }
+
+    function createCompositeMask() {
+        const mask = document.createElement('canvas');
+        mask.width = canvas.width; mask.height = canvas.height;
+        const mctx = mask.getContext('2d');
+        
+        if(subjectMaskCanvas) {
+            mctx.drawImage(subjectMaskCanvas, imageState.x, imageState.y, imageState.w, imageState.h);
+        }
+        
+        focusStrokes.forEach(stroke => {
+            mctx.save();
+            mctx.lineCap = 'round';
+            mctx.lineJoin = 'round';
+            mctx.lineWidth = stroke.size;
+            mctx.strokeStyle = 'white';
+            mctx.beginPath();
+            stroke.points.forEach((pt,i) => { if(i===0)mctx.moveTo(pt.x,pt.y); else mctx.lineTo(pt.x,pt.y); });
+            mctx.stroke();
+            mctx.restore();
+        });
+        return mask;
+    }
+
+    function render(){
+      if(!originalImage){drawPlaceholder();return;}
+      if(stageUploadBtn)stageUploadBtn.classList.add('hidden');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.save();
+      ctx.fillStyle='#111827';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.restore();
+      
+      if(blurMode !== 'none') {
+        const blurredBg = generateBlurredBackground(blurMode, blurStrength);
+        if(blurredBg) ctx.drawImage(blurredBg, 0, 0);
+        const temp = document.createElement('canvas');
+        temp.width = canvas.width; temp.height = canvas.height;
+        const tctx = temp.getContext('2d');
+        
+        const mainImageLayer = document.createElement('canvas');
+        mainImageLayer.width = canvas.width; mainImageLayer.height = canvas.height;
+        const milCtx = mainImageLayer.getContext('2d');
+        drawImageWithEraserAndClean(milCtx, originalImage, imageState.x, imageState.y, imageState.w, imageState.h);
+        
+        const mask = createCompositeMask();
+        tctx.drawImage(mainImageLayer, 0, 0);
+        tctx.globalCompositeOperation = 'destination-in';
+        tctx.drawImage(mask, 0, 0);
+        
+        ctx.drawImage(temp, 0, 0);
+      } else {
+        drawImageWithEraserAndClean(ctx,originalImage,imageState.x,imageState.y,imageState.w,imageState.h);
+      }
+
+      photoItems.forEach(p=>drawPhotoItem(ctx,p));
+
+      ctx.filter='none';
+      texts.forEach(t=>{
+        ctx.save();ctx.font=`${t.size}px ${t.font}`;ctx.fillStyle=t.color;ctx.lineWidth=Math.max(3,t.size/12);ctx.strokeStyle='rgba(0,0,0,.55)';
+        String(t.text||'').split('\n').forEach((line,i)=>{const yy=t.y+i*t.size*1.25;ctx.strokeText(line,t.x,yy);ctx.fillText(line,t.x,yy);});
+        if(activeItem===t){ctx.strokeStyle='#67e8f9';ctx.setLineDash([8,5]);const width=Math.max(...String(t.text||'').split('\n').map(line=>ctx.measureText(line).width),10);ctx.strokeRect(t.x-8,t.y-t.size,width+16,t.size*1.35*String(t.text||'').split('\n').length);}
+        ctx.restore();
+      });
+      stickers.forEach(s=>{ctx.save();ctx.font=`900 ${s.size}px "Font Awesome 6 Free"`;ctx.fillStyle=s.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=8;ctx.fillText(s.icon,s.x,s.y);if(activeItem===s){ctx.shadowBlur=0;ctx.strokeStyle='#67e8f9';ctx.setLineDash([6,4]);ctx.strokeRect(s.x-s.size/2,s.y-s.size/2,s.size,s.size);}ctx.restore();});
+      if(crop){ctx.save();ctx.strokeStyle='#fde047';ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.strokeRect(crop.x,crop.y,crop.w,crop.h);ctx.fillStyle='rgba(253,224,71,.12)';ctx.fillRect(crop.x,crop.y,crop.w,crop.h);ctx.restore();}
+      
+      if(currentFocusStroke && currentFocusStroke.points.length) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(103,232,249,0.8)';
+          ctx.lineWidth = currentFocusStroke.size;
+          ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath();
+          currentFocusStroke.points.forEach((pt,i)=>{if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
+          ctx.stroke();
+          ctx.restore();
+      }
+
+      if(currentMagicStroke && currentMagicStroke.points.length) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(251,191,36,0.85)';
+        ctx.lineWidth = currentMagicStroke.size;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath();
+        currentMagicStroke.points.forEach((pt,i)=>{if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      updatePhotoLayerStatus();
+    }
+    function updatePhotoLayerOverlay(){photoLayer.width=canvas.width;photoLayer.height=canvas.height;photoCtx.clearRect(0,0,photoLayer.width,photoLayer.height);}
+
+    upload.addEventListener('change', e=>{
+      const file=e.target.files[0]; if(!file)return;
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        originalImageSrc=ev.target.result;
+        const img=new Image();img.onload=()=>{
+          originalImage=img;
+          resizeCanvasToImageAspect(img);
+          redoStack=[];
+          imageState={x:0,y:0,w:canvas.width,h:canvas.height};
+          activePreset='normal';mainAdjustments=defaultAdjustments();syncControlsFromMain();
+          texts=[];stickers=[];photoItems=[];history=[];redoStack=[];crop=null;eraseStrokes=[];whiteCleanPatches=[];bgRemove={enabled:false,useAi:false,color:null,tolerance:70};activeItem=null;mergedBackup=null;photoLayersMerged=false;
+          blurMode = 'none'; focusStrokes = []; subjectMaskCanvas = null;
+          setBlurMode('none');
+          updateHint('Foto siap diedit. Klik objek/teks untuk memindahkan.');
+          render();saveHistory();
+        }; img.src=ev.target.result;
+      }; reader.readAsDataURL(file);
+    });
+
+    $('addPhotoInput').addEventListener('change',e=>{
+      const file=e.target.files[0]; if(!file)return;
+      if(!originalImage){alert('Upload foto utama dulu.');return;}
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        const img=new Image();
+        img.onload=()=>{
+          const r=Math.min(canvas.width*0.38/img.width,canvas.height*0.38/img.height,1);
+          const w=img.width*r,h=img.height*r;
+          const p={type:'photo',id:++photoItemId,img,src:ev.target.result,x:(canvas.width-w)/2+30,y:(canvas.height-h)/2+30,w,h,origW:w,origH:h,scale:100,preset:'normal',filterStrength:100,adjustments:defaultAdjustments()};
+          photoItems.push(p);activeItem=p;photoLayersMerged=false;
+          if(addedPhotoSizeBox) addedPhotoSizeBox.classList.remove('hidden-panel');
+          if(addedPhotoSize) addedPhotoSize.value=100;
+          if(addedPhotoSizeVal) addedPhotoSizeVal.textContent='100%';
+          render();saveHistory();
+        };img.src=ev.target.result;
+      };reader.readAsDataURL(file);
+      e.target.value='';
+    });
+
+    function mergeAddedPhotos(){
+      if(!originalImage||!photoItems.length)return alert('Tambahkan foto dulu.');
+      const off=document.createElement('canvas');off.width=canvas.width;off.height=canvas.height;const o=off.getContext('2d');
+      mergedBackup={originalImageSrc,imageState:{...imageState},photoItems:photoItems.map(p=>({src:p.src,x:p.x,y:p.y,w:p.w,h:p.h,origW:p.origW,origH:p.origH,scale:p.scale,preset:p.preset,filterStrength:p.filterStrength,adjustments:p.adjustments})),mainAdjustments:{...mainAdjustments}};
+      o.fillStyle='#111827';o.fillRect(0,0,off.width,off.height);
+      o.filter=getFilterString();o.drawImage(originalImage,imageState.x,imageState.y,imageState.w,imageState.h);o.filter='none';
+      photoItems.forEach(p=>drawPhotoItem(o,p,false));
+      const img=new Image();img.onload=()=>{originalImage=img;originalImageSrc=off.toDataURL('image/png');imageState={x:0,y:0,w:canvas.width,h:canvas.height};photoItems=[];photoLayersMerged=true;activeItem=null;mainAdjustments=defaultAdjustments();syncControlsFromMain();render();saveHistory();};img.src=off.toDataURL('image/png');
+    }
+    function separateAddedPhotos(){
+      if(!mergedBackup)return alert('Belum ada foto yang digabung.');
+      const img=new Image();img.onload=()=>{originalImage=img;originalImageSrc=mergedBackup.originalImageSrc;imageState={...mergedBackup.imageState};mainAdjustments={...mergedBackup.mainAdjustments};syncControlsFromMain();restorePhotoItems(mergedBackup.photoItems);photoLayersMerged=false;activeItem=null;render();saveHistory();};img.src=mergedBackup.originalImageSrc;
+    }
+
+    filterStrength?.addEventListener('input',()=>{if(!originalImage)return;applyFilterToMain(activePreset,Number(filterStrength.value));updateLabels();render();});
+    filterStrength?.addEventListener('change',saveHistory);
+    closeFilterAdjust?.addEventListener('click',hideFilterAdjustPanel);
+
+    Object.keys(controls).forEach(k=>controls[k].addEventListener('input',()=>{updateMainAdjustmentsFromControls();labels[k].textContent=controls[k].value+(k==='blur'?'px':'%');activePreset='custom';setActiveFilter('');if(selectedFilterName)selectedFilterName.innerHTML='<i class="fa-solid fa-sliders"></i> Filter aktif: Manual';render();}));
+    Object.values(controls).forEach(el=>el.addEventListener('change',saveHistory));
+
+    fontSize.addEventListener('input',()=>{fontSizeVal.textContent=fontSize.value+'px';if(activeItem&&activeItem.type==='text'){activeItem.size=Number(fontSize.value);render();}});
+    textColor.addEventListener('input',()=>{if(activeItem&&(activeItem.type==='text'||activeItem.type==='sticker')){activeItem.color=textColor.value;render();}});
+    fontFamily.addEventListener('change',()=>{if(activeItem&&activeItem.type==='text'){activeItem.font=fontFamily.value;render();saveHistory();}});
+    $('textInput').addEventListener('input',()=>{if(activeItem&&activeItem.type==='text'){activeItem.text=$('textInput').value;render();}});
+
+    $('addText').addEventListener('click',()=>{const t=$('textInput').value.trim();if(!t)return alert('Isi teks dulu.');const obj={type:'text',text:t,x:70,y:100,size:Number(fontSize.value),color:textColor.value,font:fontFamily.value};texts.push(obj);activeItem=obj;render();saveHistory();});
+    document.querySelectorAll('[data-sticker]').forEach(b=>b.addEventListener('click',()=>{if(!originalImage)return alert('Upload foto dulu.');const obj={type:'sticker',icon:b.dataset.sticker,x:canvas.width/2,y:canvas.height/2,size:60,color:textColor.value};stickers.push(obj);activeItem=obj;render();saveHistory();}));
+
+    canvas.addEventListener('pointerdown',e=>{
+      if(!originalImage)return;
+      e.preventDefault();
+      canvas.setPointerCapture?.(e.pointerId);
+      const p=getPointerPos(e);
+      if(pickBgMode){pickBgAt(p);return;}
+      if(eraserMode){isErasing=true;eraseStrokes.push({size:Number(eraserSize.value),points:[p]});render();return;}
+      if(magicEraserMode){currentMagicStroke={size:Number(magicBrushSize.value),points:[p]};render();return;}
+      if(isSettingFocus){
+          isDraggingFocus = true;
+          currentFocusStroke = { size: Number(focusSizeSlider.value), points: [p] };
+          render();
+          return;
+      }
+      if(isCropping){
+        if(cropRatio && crop && isPointInItem(p,crop)){
+          isDragging=true;
+          activeItem={type:'crop-box',x:crop.x,y:crop.y,w:crop.w,h:crop.h};
+          dragOffset.x=p.x-crop.x;
+          dragOffset.y=p.y-crop.y;
+          return;
+        }
+        cropStartPoint={x:p.x,y:p.y};
+        crop={x:p.x,y:p.y,w:0,h:0};
+        isDragging=true;
+        return;
+      }
+      const item=findTopItem(p);activeItem=item;
+      if(item){isDragging=true;dragOffset.x=p.x-item.x;dragOffset.y=p.y-item.y;if(item.type==='text'){$('textInput').value=item.text;fontSize.value=item.size;fontSizeVal.textContent=item.size+'px';textColor.value=item.color;fontFamily.value=item.font;}if(item.type==='sticker'){textColor.value=item.color;}if(item.type==='photo'){addedPhotoSizeBox.classList.remove('hidden-panel');addedPhotoSize.value=item.scale||100;addedPhotoSizeVal.textContent=(item.scale||100)+'%';}else if(addedPhotoSizeBox){addedPhotoSizeBox.classList.add('hidden-panel');}}else if(addedPhotoSizeBox){addedPhotoSizeBox.classList.add('hidden-panel');}
+      render();
+    });
+    canvas.addEventListener('pointermove',e=>{
+      if(!originalImage)return;
+      e.preventDefault();
+      const p=getPointerPos(e);
+      if(isErasing&&eraseStrokes.length){eraseStrokes[eraseStrokes.length-1].points.push(p);render();return;}
+      if(currentMagicStroke){currentMagicStroke.points.push(p);render();return;}
+      if(isDraggingFocus && currentFocusStroke) {
+          currentFocusStroke.points.push(p); render(); return;
+      }
+      if(!isDragging)return;
+      if(isCropping&&crop){
+        if(activeItem && activeItem.type==='crop-box'){
+          crop.x=p.x-dragOffset.x;
+          crop.y=p.y-dragOffset.y;
+          crop.x=Math.max(0,Math.min(canvas.width-crop.w,crop.x));
+          crop.y=Math.max(0,Math.min(canvas.height-crop.h,crop.y));
+        }else{
+          const start=cropStartPoint||{x:crop.x,y:crop.y};
+          crop=normalizeCropByRatio(start,p,cropRatio);
+        }
+        render();return;
+      }
+      if(activeItem){activeItem.x=p.x-dragOffset.x;activeItem.y=p.y-dragOffset.y;render();}
+    });
+    window.addEventListener('pointerup',()=>{
+      if(isErasing){isErasing=false;saveHistory();}
+      if(currentMagicStroke){
+        applyMagicEraser(currentMagicStroke);
+        currentMagicStroke=null;
+        saveHistory();
+      }
+      if(isDraggingFocus && currentFocusStroke) {
+          focusStrokes.push(currentFocusStroke);
+          currentFocusStroke = null;
+          isDraggingFocus = false;
+          render(); saveHistory();
+      }
+      if(isDragging){
+        isDragging=false;
+        if(isCropping&&crop){keepCropInsideCanvas();render();}
+        cropStartPoint=null;
+        if(activeItem&&activeItem.type==='crop-box')activeItem=null;
+        saveHistory();
+      }
+    });
+
+    function pickBgAt(p){
+      const off=document.createElement('canvas');off.width=canvas.width;off.height=canvas.height;const o=off.getContext('2d');o.drawImage(originalImage,imageState.x,imageState.y,imageState.w,imageState.h);const d=o.getImageData(Math.floor(p.x),Math.floor(p.y),1,1).data;bgRemove={enabled:true,useAi:false,color:{r:d[0],g:d[1],b:d[2]},tolerance:82};pickBgMode=false;$('pickRemoveBg').classList.remove('tool-on');toolNote.textContent='Warna latar dipilih dan dihapus.';render();saveHistory();
+    }
+
+    $('autoRemoveBg').addEventListener('click',()=>{
+      if(!originalImage)return alert('Upload foto dulu.');
+      bgAiStatus.textContent = 'Mendeteksi orang dengan AI...';
+      detectSubjectAI((err)=>{
+        if(err) {
+            bgAiStatus.textContent = 'Gagal AI. Gunakan Pilih Warna atau pastikan internet aktif.';
+            return;
+        }
+        bgRemove.enabled=true; bgRemove.useAi=true; bgRemove.color=null;
+        bgAiStatus.textContent = 'Latar belakang berhasil dihapus otomatis.';
+        render(); saveHistory();
+      });
+    });
+    $('pickRemoveBg').addEventListener('click',()=>{pickBgMode=!pickBgMode;eraserMode=false;magicEraserMode=false;isSettingFocus=false;$('pickRemoveBg').classList.toggle('tool-on',pickBgMode);eraserToggle.classList.remove('tool-on');toggleMagicBrush?.classList.remove('tool-on');toggleBlurFocus?.classList.remove('tool-on');toolNote.textContent=pickBgMode?'Klik warna latar pada foto.':'Mode pilih warna mati.';});
+    $('clearRemoveBg').addEventListener('click',()=>{bgRemove={enabled:false,useAi:false,color:null,tolerance:70};bgAiStatus.textContent='Mode cepat otomatis kini menggunakan AI.';render();saveHistory();});
+    eraserToggle.addEventListener('click',()=>{eraserMode=!eraserMode;pickBgMode=false;magicEraserMode=false;isSettingFocus=false;eraserToggle.classList.toggle('tool-on',eraserMode);$('pickRemoveBg').classList.remove('tool-on');toggleMagicBrush?.classList.remove('tool-on');toggleBlurFocus?.classList.remove('tool-on');eraserToggle.innerHTML=`<i class="fa-solid fa-eraser"></i> Penghapus: ${eraserMode?'Aktif':'Mati'}`;toolNote.textContent=eraserMode?'Geser di foto untuk menghapus bagian tertentu.':'Mode penghapus mati.';canvas.classList.toggle('eraser-cursor',eraserMode);});
+    eraserSize.addEventListener('input',updateLabels);eraserRoughness.addEventListener('input',updateLabels);
+    $('clearEraser').addEventListener('click',()=>{eraseStrokes=[];whiteCleanPatches=[];render();saveHistory();});
+    $('cleanWhiteBg').addEventListener('click',()=>{if(!originalImage)return;whiteCleanPatches.push({x:imageState.x+imageState.w/2,y:imageState.y+imageState.h/2,r:Math.max(imageState.w,imageState.h)*0.8,a:0.18+Number(eraserRoughness.value)/250});render();saveHistory();});
+
+    function applyMagicEraser(stroke){
+      if(!stroke || !stroke.points.length) return;
+      const minX=Math.max(0,Math.min(...stroke.points.map(p=>p.x))-stroke.size*1.4);
+      const maxX=Math.min(canvas.width,Math.max(...stroke.points.map(p=>p.x))+stroke.size*1.4);
+      const minY=Math.max(0,Math.min(...stroke.points.map(p=>p.y))-stroke.size*1.4);
+      const maxY=Math.min(canvas.height,Math.max(...stroke.points.map(p=>p.y))+stroke.size*1.4);
+      const box={x:minX,y:minY,w:maxX-minX,h:maxY-minY};
+      const off=document.createElement('canvas');off.width=canvas.width;off.height=canvas.height;const o=off.getContext('2d');
+      o.drawImage(originalImage,imageState.x,imageState.y,imageState.w,imageState.h);
+      const sx=Math.max(0,box.x-box.w*0.8);
+      const sy=Math.max(0,box.y);
+      const sw=Math.min(canvas.width-sx,box.w);
+      const sh=Math.min(canvas.height-sy,box.h);
+      ctx.save();
+      ctx.globalAlpha=0.96;
+      try{
+        const patch=o.getImageData(Math.floor(sx),Math.floor(sy),Math.max(1,Math.floor(sw)),Math.max(1,Math.floor(sh)));
+        const temp=document.createElement('canvas');temp.width=patch.width;temp.height=patch.height;temp.getContext('2d').putImageData(patch,0,0);
+        const mainOff=document.createElement('canvas');mainOff.width=canvas.width;mainOff.height=canvas.height;const m=mainOff.getContext('2d');
+        m.drawImage(originalImage,imageState.x,imageState.y,imageState.w,imageState.h);
+        m.save();m.beginPath();m.lineCap='round';m.lineJoin='round';m.lineWidth=stroke.size;m.strokeStyle='black';stroke.points.forEach((p,i)=>{if(i===0)m.moveTo(p.x,p.y);else m.lineTo(p.x,p.y);});m.stroke();m.clip();m.filter='blur(2px)';m.drawImage(temp,box.x,box.y,box.w,box.h);m.restore();
+        const img=new Image();img.onload=()=>{originalImage=img;originalImageSrc=mainOff.toDataURL('image/png');render();};img.src=mainOff.toDataURL('image/png');
+      }catch(e){console.error(e);}
+      ctx.restore();
+    }
+
+    toggleMagicBrush?.addEventListener('click',()=>{
+      if(!originalImage)return alert('Upload foto dulu.');
+      magicEraserMode=!magicEraserMode;eraserMode=false;pickBgMode=false;isSettingFocus=false;
+      toggleMagicBrush.classList.toggle('tool-on',magicEraserMode);
+      eraserToggle.classList.remove('tool-on');$('pickRemoveBg').classList.remove('tool-on');toggleBlurFocus?.classList.remove('tool-on');
+      toggleMagicBrush.innerHTML=`<i class="fa-solid fa-paint-roller"></i> Kuas Distraksi: ${magicEraserMode?'Aktif':'Mati'}`;
+      toolNote.textContent=magicEraserMode?'Coret objek yang ingin disamarkan.':'Kuas distraksi mati.';
+      canvas.classList.toggle('eraser-cursor',magicEraserMode||eraserMode);
+    });
+    magicBrushSize?.addEventListener('input',updateLabels);
+
+    btnBlurNone?.addEventListener('click',()=>setBlurMode('none'));
+    btnBlurStandard?.addEventListener('click',()=>setBlurMode('standard'));
+    btnBlurMotion?.addEventListener('click',()=>setBlurMode('motion'));
+    btnBlurFilm?.addEventListener('click',()=>setBlurMode('film'));
+    $('btnAutoSubjectBlur')?.addEventListener('click',()=>{
+        if(!originalImage)return alert('Upload foto dulu.');
+        setBlurMode('standard');
+        detectSubjectAI((err)=>{
+            if(err) alert('Gagal mendeteksi AI. Pastikan internet aktif.');
+        });
+    });
+    blurStrengthSlider?.addEventListener('input',()=>{blurStrength=Number(blurStrengthSlider.value);blurStrengthDisplay.textContent=blurStrength+'%';render();});
+    blurStrengthSlider?.addEventListener('change',saveHistory);
+    focusSizeSlider?.addEventListener('input',()=>{focusSizePct=Number(focusSizeSlider.value);focusSizeDisplay.textContent=focusSizePct+'px';});
+    toggleBlurFocus?.addEventListener('click',()=>{
+        if(!originalImage)return alert('Upload foto dulu.');
+        isSettingFocus=!isSettingFocus;eraserMode=false;pickBgMode=false;magicEraserMode=false;
+        toggleBlurFocus.classList.toggle('tool-on',isSettingFocus);
+        eraserToggle.classList.remove('tool-on');$('pickRemoveBg').classList.remove('tool-on');toggleMagicBrush?.classList.remove('tool-on');
+        toggleBlurFocus.innerHTML=`<i class="fa-solid fa-paint-brush"></i> Kuas Tambahan: ${isSettingFocus?'Aktif':'Mati'}`;
+        toolNote.textContent=isSettingFocus?'Coret area yang ingin tetap tajam/tidak blur.':'Kuas fokus mati.';
+    });
+    clearBlurFocus?.addEventListener('click',()=>{focusStrokes=[];subjectMaskCanvas=null;render();saveHistory();});
+
+    document.querySelectorAll('.crop-preset').forEach(btn=>btn.addEventListener('click',()=>setCropPreset(btn.dataset.cropLabel,btn.dataset.cropRatio)));
+    $('cropBtn').addEventListener('click',()=>{
+      if(!originalImage)return alert('Upload foto dulu.');
+      isCropping=true;
+      if(cropRatio) makeCropFromRatio(cropRatio);
+      else crop=null;
+      updateCropStatus();
+      updateHint(cropRatio ? `Mode ${cropLabel}. Geser kotak kuning atau tarik ulang area.` : 'Tarik area crop bebas di foto.');
+      render();
+    });
+    $('clearCrop').addEventListener('click',()=>{crop=null;cropStartPoint=null;isCropping=false;cropRatio=null;cropLabel='Bebas';updateCropStatus();render();saveHistory();});
+    function applyCrop(){
+      if(!crop||Math.abs(crop.w)<20||Math.abs(crop.h)<20)return;
+      const x=Math.min(crop.x,crop.x+crop.w),y=Math.min(crop.y,crop.y+crop.h),w=Math.abs(crop.w),h=Math.abs(crop.h);
+      const off=document.createElement('canvas');off.width=w;off.height=h;const o=off.getContext('2d');o.drawImage(canvas,x,y,w,h,0,0,w,h);
+      const img=new Image();img.onload=()=>{canvas.width=w;canvas.height=h;photoLayer.width=w;photoLayer.height=h;originalImage=img;originalImageSrc=off.toDataURL('image/png');imageState={x:0,y:0,w,h};crop=null;cropStartPoint=null;isCropping=false;texts=[];stickers=[];photoItems=[];eraseStrokes=[];whiteCleanPatches=[];subjectMaskCanvas=null;render();saveHistory();};img.src=off.toDataURL('image/png');
+    }
+    $('applyCropBtn')?.addEventListener('click',applyCrop);
+    canvas.addEventListener('dblclick',applyCrop);
+
+    $('mergePhotos').addEventListener('click',mergeAddedPhotos);
+    $('separatePhotos').addEventListener('click',separateAddedPhotos);
+    $('clearAddedPhotos').addEventListener('click',()=>{photoItems=[];activeItem=null;photoLayersMerged=false;render();saveHistory();});
+    $('layoutFull')?.addEventListener('click',()=>applyLayout('full'));
+    $('layoutSide')?.addEventListener('click',()=>applyLayout('side'));
+    $('layoutTopBottom')?.addEventListener('click',()=>applyLayout('topBottom'));
+    $('layoutPip')?.addEventListener('click',()=>applyLayout('pip'));
+    $('layoutCenter')?.addEventListener('click',centerAllPhotos);
+    $('layoutSquare')?.addEventListener('click',()=>resizeCanvasToPreset('square'));
+    $('layoutWide')?.addEventListener('click',()=>resizeCanvasToPreset('wide'));
+    addedPhotoSize?.addEventListener('input',()=>{
+      if(!activeItem||activeItem.type!=='photo')return;
+      const oldCx=activeItem.x+activeItem.w/2, oldCy=activeItem.y+activeItem.h/2;
+      activeItem.scale=Number(addedPhotoSize.value);
+      activeItem.w=activeItem.origW*(activeItem.scale/100);
+      activeItem.h=activeItem.origH*(activeItem.scale/100);
+      activeItem.x=oldCx-activeItem.w/2;activeItem.y=oldCy-activeItem.h/2;
+      addedPhotoSizeVal.textContent=activeItem.scale+'%';render();
+    });
+    addedPhotoSize?.addEventListener('change',saveHistory);
+
+    $('undo').addEventListener('click',restoreHistory);
+    $('mobileUndo')?.addEventListener('click',restoreHistory);
+    $('mobileRedo')?.addEventListener('click',redoHistory);
+    $('reset').addEventListener('click',()=>{if(!originalImage)return;const img=new Image();img.onload=()=>{originalImage=img;resizeCanvasToImageAspect(img);imageState={x:0,y:0,w:canvas.width,h:canvas.height};mainAdjustments=defaultAdjustments();syncControlsFromMain();texts=[];stickers=[];photoItems=[];crop=null;eraseStrokes=[];whiteCleanPatches=[];bgRemove={enabled:false,useAi:false,color:null,tolerance:70};blurMode='none';subjectMaskCanvas=null;focusStrokes=[];activeItem=null;render();saveHistory();};img.src=originalImageSrc;});
+    $('fitImage').addEventListener('click',()=>{fitImageToCanvas();render();saveHistory();});
+    $('originalCanvas')?.addEventListener('click',useOriginalPhotoCanvas);
+
+    function isMobileDevice(){
+      return window.matchMedia('(max-width: 700px)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    }
+
+    function canvasToBlobSafe(mime, quality=0.95){
+      return new Promise((resolve,reject)=>{
+        try{
+          if(canvas.toBlob){
+            canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Gagal membuat file gambar.')),mime,quality);
+          }else{
+            const dataUrl=canvas.toDataURL(mime,quality);
+            const parts=dataUrl.split(',');
+            const byteString=atob(parts[1]);
+            const ab=new ArrayBuffer(byteString.length);
+            const ia=new Uint8Array(ab);
+            for(let i=0;i<byteString.length;i++)ia[i]=byteString.charCodeAt(i);
+            resolve(new Blob([ab],{type:mime}));
+          }
+        }catch(err){reject(err);}
+      });
+    }
+
+    let lastSaveBlob=null;
+    let lastSaveFileName='mrd-photo-editor.png';
+    let lastSaveMime='image/png';
+    let lastSaveObjectUrl=null;
+
+    function openSavePreview(blob, filename, mime){
+      lastSaveBlob=blob;
+      lastSaveFileName=filename;
+      lastSaveMime=mime;
+      if(lastSaveObjectUrl)URL.revokeObjectURL(lastSaveObjectUrl);
+      lastSaveObjectUrl=URL.createObjectURL(blob);
+      const modal=$('savePreviewModal');
+      const img=$('savePreviewImage');
+      const dl=$('savePreviewDownload');
+      if(img)img.src=lastSaveObjectUrl;
+      if(dl){dl.href=lastSaveObjectUrl;dl.download=filename;}
+      if(modal)modal.classList.remove('hidden-panel');
+    }
+
+    function closeSavePreview(){
+      const modal=$('savePreviewModal');
+      if(modal)modal.classList.add('hidden-panel');
+    }
+
+    async function shareSavedImage(){
+      if(!lastSaveBlob)return;
+      try{
+        const file=new File([lastSaveBlob],lastSaveFileName,{type:lastSaveMime});
+        if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'MRD Photo Editor'});
+        }else{
+          alert('HP/browser ini belum mendukung tombol Bagikan. Tekan lama gambar lalu pilih Simpan gambar.');
+        }
+      }catch(e){
+        if(e && e.name !== 'AbortError') alert('Gagal membagikan. Tekan lama gambar lalu pilih Simpan gambar.');
+      }
+    }
+
+    async function download(type='png'){
+      if(!originalImage)return alert('Upload foto dulu.');
+      render();
+      const mime=type==='jpg'?'image/jpeg':'image/png';
+      const filename=`mrd-photo-editor.${type==='jpg'?'jpg':'png'}`;
+      try{
+        const blob=await canvasToBlobSafe(mime,0.95);
+        const file=new File([blob],filename,{type:mime});
+
+        if(isMobileDevice() && navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+          openSavePreview(blob,filename,mime);
+          try{ await navigator.share({files:[file],title:'MRD Photo Editor'}); }catch(e){}
+          return;
+        }
+
+        const url=URL.createObjectURL(blob);
+        const link=document.createElement('a');
+        link.download=filename;
+        link.href=url;
+        link.rel='noopener';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(()=>{document.body.removeChild(link);URL.revokeObjectURL(url);},1200);
+
+        if(isMobileDevice()){
+          setTimeout(()=>openSavePreview(blob,filename,mime),400);
+        }
+      }catch(err){
+        console.error(err);
+        try{
+          const dataUrl=canvas.toDataURL(mime,0.95);
+          const img=$('savePreviewImage');
+          const modal=$('savePreviewModal');
+          const dl=$('savePreviewDownload');
+          if(img)img.src=dataUrl;
+          if(dl){dl.href=dataUrl;dl.download=filename;}
+          if(modal)modal.classList.remove('hidden-panel');
+        }catch(e){
+          alert('Gagal menyimpan foto. Coba buka lewat Chrome, bukan dari preview/WebView.');
+        }
+      }
+    }
+    $('downloadPng').addEventListener('click',()=>download('png'));
+    $('downloadJpg').addEventListener('click',()=>download('jpg'));
+    $('savePreviewClose')?.addEventListener('click',closeSavePreview);
+    $('savePreviewShare')?.addEventListener('click',shareSavedImage);
+    $('savePreviewModal')?.addEventListener('click',(e)=>{if(e.target===$('savePreviewModal'))closeSavePreview();});
+
+    function setupMobileEditBar(){
+      const bar=document.querySelector('.mobile-edit-bar');
+      const sidebar=document.querySelector('.sidebar');
+      if(!bar||!sidebar)return;
+
+      const getMainPanels=()=>Array.from(sidebar.children).filter(el=>el.classList && el.classList.contains('section'));
+
+      const clearMobilePanels=()=>{
+        getMainPanels().forEach(panel=>{
+          panel.classList.remove('mobile-panel-active');
+          panel.style.display='';
+        });
+      };
+
+      const openMobilePanel=(target)=>{
+        if(!target){
+          alert('Panel fitur belum ditemukan. Coba refresh aplikasi.');
+          return;
+        }
+        if(target.id==='filterGroupPanel') renderFilterGroups();
+        clearMobilePanels();
+        sidebar.classList.add('has-active-panel');
+        target.classList.add('mobile-panel-active');
+        target.style.display='block';
+        if(target.tagName==='DETAILS'){
+          target.open=true;
+          target.setAttribute('open','open');
+        }
+        target.scrollTop=0;
+        const body=target.querySelector('.section-body');
+        if(body){
+          body.style.display='block';
+          body.scrollTop=0;
+        }
+        if(target.id==='filterGroupPanel'){
+          const root=$('filterGroups');
+          if(root){
+            root.style.display='block';
+            root.style.visibility='visible';
+          }
+        }
+      };
+
+      const targetMap={
+        upload: document.querySelector('.upload-section'),
+        addphoto: $('addPhotoPanel'),
+        layout: $('layoutPanel'),
+        filters: $('filterGroupPanel'),
+        settings: $('manualAdjustPanel'),
+        blur: $('blurSection'),
+        bg: $('backgroundPanel'),
+        magic: $('magicEraserSection'),
+        text: $('textPanel'),
+        sticker: $('stickerPanel'),
+        crop: $('cropPanel')
+      };
+
+      bar.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{
+        const tool=btn.dataset.mobileTool;
+        if(tool==='save'){download('png');return;}
+        bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===btn));
+        if(tool==='upload'){
+          openMobilePanel(targetMap.upload);
+          upload.click();
+          return;
+        }
+        openMobilePanel(targetMap[tool]);
+      }));
+    }
+
+    function checkOnlineStatus() {
+      if(navigator.onLine) {
+        if(adContainer) {
+          adContainer.style.display = 'block';
+          try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) { console.log('Ads not loaded yet'); }
+        }
+      } else {
+        if(adContainer) adContainer.style.display = 'none';
+      }
+    }
+    window.addEventListener('online', checkOnlineStatus);
+    window.addEventListener('offline', checkOnlineStatus);
+    checkOnlineStatus();
+
+    renderFilterGroups();
+    const firstMobileBtn = document.querySelector('.mobile-edit-bar [data-mobile-tool="filters"]');
+    hideFilterAdjustPanel();
+    updateLabels();
+    updateCropStatus();
+    drawPlaceholder();
+    setupMobileEditBar();
+    updateHistoryButtons();
+  </script>
+</body>
+</html>
+</pre>
+        </body>
+    </html>
